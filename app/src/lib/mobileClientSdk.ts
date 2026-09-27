@@ -54,4 +54,29 @@ export class EdnovaMobileClient {
       { studentId: 'stu-101', name: 'Alex Morgan', grade: 'Grade 7', division: 'Section A' }
     ];
   }
+
+  /**
+   * Resolves the active workspace dynamically from authenticated user role and permissions
+   */
+  public resolveWorkspaceType(): 'STUDENT' | 'PARENT' | 'TEACHER' | 'ADMIN' | 'PRINCIPAL' | 'SECURITY' {
+    if (!this.session) return 'STUDENT';
+
+    switch (this.session.role) {
+      case 'PRINCIPAL':
+        return 'PRINCIPAL';
+      case 'TEACHER':
+        return 'TEACHER';
+      case 'PARENT':
+        return 'PARENT';
+      case 'SECURITY_GUARD':
+        return 'SECURITY';
+      case 'SCHOOL_ADMIN':
+      case 'SUPER_ADMIN':
+      case 'ADMIN_STAFF':
+        return 'ADMIN';
+      case 'STUDENT':
+      default:
+        return 'STUDENT';
+    }
+  }
 }
