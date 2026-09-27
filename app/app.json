@@ -1,0 +1,25 @@
+{
+  "name": "ednova-mobile-apps",
+  "slug": "ednova-mobile",
+  "version": "1.0.0",
+  "orientation": "portrait",
+  "icon": "./assets/icon.png",
+  "scheme": "ednova",
+  "userInterfaceStyle": "dark",
+  "splash": {
+    "image": "./assets/splash.png",
+    "resizeMode": "contain",
+    "backgroundColor": "#0f172a"
+  },
+  "ios": {
+    "supportsTablet": true,
+    "bundleIdentifier": "org.ednova.app"
+  },
+  "android": {
+    "adaptiveIcon": {
+      "foregroundImage": "./assets/adaptive-icon.png",
+      "backgroundColor": "#0f172a"
+    },
+    "package": "org.ednova.app"
+  }
+}
