@@ -1,94 +1,67 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import AppShell from '@/components/AppShell';
-import { Smartphone, ShieldCheck, CheckSquare, AlertTriangle, Users, Bot } from 'lucide-react';
+import { Smartphone, ShieldCheck, CheckSquare, AlertTriangle, Users, Bot, Layers } from 'lucide-react';
+import StudentWorkspaceView from './workspaces/student/page';
+import ParentWorkspaceView from './workspaces/parent/page';
+import TeacherWorkspaceView from './workspaces/teacher/page';
+import AdminWorkspaceView from './workspaces/admin/page';
+import PrincipalWorkspaceView from './workspaces/principal/page';
+import SecurityWorkspaceView from './workspaces/security/page';
 
 export default function MobileSimulatorPage() {
+  const [activeWorkspace, setActiveWorkspace] = useState<'STUDENT' | 'PARENT' | 'TEACHER' | 'ADMIN' | 'PRINCIPAL' | 'SECURITY'>('STUDENT');
+
   return (
     <AppShell userRole="PRINCIPAL" userName="Dr. Robert Vance (Principal)">
       <div className="space-y-6 font-sans">
-        {/* Header */}
+        {/* Mobile Header Shell */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-6 rounded-xl shadow-2xl">
           <div className="flex items-center gap-3">
             <div className="p-3 rounded-lg bg-indigo-600/20 text-indigo-400">
               <Smartphone className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white">EDNOVA Single Mobile App & Role Workspaces</h1>
-              <p className="text-sm text-slate-400">One mobile codebase with dynamic workspace resolution for Principal, Staff/Teacher, Student, Parent, and Security roles.</p>
+              <h1 className="text-2xl font-bold text-white">EDNOVA Single Mobile Shell</h1>
+              <p className="text-sm text-slate-400">Unified mobile codebase (`mobile-core`) with dynamic role workspace navigation engine.</p>
             </div>
           </div>
-          <span className="text-xs font-mono text-indigo-400 bg-indigo-500/10 px-3 py-1.5 rounded border border-indigo-500/20">
-            Single Mobile SDK Resolver Active
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-mono text-indigo-400 bg-indigo-500/10 px-3 py-1.5 rounded border border-indigo-500/20">
+              Native Shell Engine Active
+            </span>
+          </div>
         </div>
 
-        {/* Dynamic Role Workspaces */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Principal Mobile Workspace */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <span className="text-xs font-mono font-bold text-indigo-400">1. PRINCIPAL WORKSPACE</span>
-              <span className="text-[10px] font-mono bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded">CONNECTED</span>
-            </div>
-            <div className="space-y-2 text-xs font-mono">
-              <p className="text-slate-300 font-bold">Executive Decision Desk</p>
-              <div className="p-2.5 bg-slate-950 rounded border border-slate-800 text-slate-400">
-                - Daily Attendance Summary: 96.4%
-                <br />- 2 Pending Approvals
-                <br />- Safety Incident Timeline #41
-              </div>
-            </div>
-          </div>
+        {/* Workspace Selector Bar */}
+        <div className="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center gap-2 overflow-x-auto">
+          <span className="text-xs font-mono font-bold text-slate-400 px-2 flex items-center gap-1.5">
+            <Layers className="w-4 h-4 text-indigo-400" /> WORKSPACE:
+          </span>
+          {(['STUDENT', 'PARENT', 'TEACHER', 'ADMIN', 'PRINCIPAL', 'SECURITY'] as const).map((role) => (
+            <button
+              key={role}
+              onClick={() => setActiveWorkspace(role)}
+              className={`text-xs font-mono px-3 py-1.5 rounded-lg border transition-colors ${
+                activeWorkspace === role
+                  ? 'bg-indigo-600 text-white border-indigo-500 font-bold'
+                  : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
+              }`}
+            >
+              {role}
+            </button>
+          ))}
+        </div>
 
-          {/* Staff/Teacher Mobile Workspace */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <span className="text-xs font-mono font-bold text-indigo-400">2. STAFF / TEACHER WORKSPACE</span>
-              <span className="text-[10px] font-mono bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded">CONNECTED</span>
-            </div>
-            <div className="space-y-2 text-xs font-mono">
-              <p className="text-slate-300 font-bold">Roster & Notes Console</p>
-              <div className="p-2.5 bg-slate-950 rounded border border-slate-800 text-slate-400">
-                - One-tap Roster Attendance
-                <br />- Today&apos;s Notes Publisher
-                <br />- Class Schedule & Alerts
-              </div>
-            </div>
-          </div>
-
-          {/* Student Mobile Workspace */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <span className="text-xs font-mono font-bold text-indigo-400">3. STUDENT WORKSPACE</span>
-              <span className="text-[10px] font-mono bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded">CONNECTED</span>
-            </div>
-            <div className="space-y-2 text-xs font-mono">
-              <p className="text-slate-300 font-bold">Student Workspace</p>
-              <div className="p-2.5 bg-slate-950 rounded border border-slate-800 text-slate-400">
-                - Timetable & Room Numbers
-                <br />- Test Marks & Letter Grades
-                <br />- Confidential Feedback Submission
-              </div>
-            </div>
-          </div>
-
-          {/* Parent Mobile Workspace */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <span className="text-xs font-mono font-bold text-indigo-400">4. PARENT WORKSPACE</span>
-              <span className="text-[10px] font-mono bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded">CONNECTED</span>
-            </div>
-            <div className="space-y-2 text-xs font-mono">
-              <p className="text-slate-300 font-bold">Linked Child Guardian Desk</p>
-              <div className="p-2.5 bg-slate-950 rounded border border-slate-800 text-slate-400">
-                - Child Selection (Linked Only)
-                <br />- Real-Time Gate Entry Notifications
-                <br />- Report Cards & Attendance Logs
-              </div>
-            </div>
-          </div>
+        {/* Dynamic Workspace Container */}
+        <div className="max-w-md mx-auto bg-slate-950 p-4 rounded-3xl border-4 border-slate-800 shadow-2xl min-h-[500px]">
+          {activeWorkspace === 'STUDENT' && <StudentWorkspaceView />}
+          {activeWorkspace === 'PARENT' && <ParentWorkspaceView />}
+          {activeWorkspace === 'TEACHER' && <TeacherWorkspaceView />}
+          {activeWorkspace === 'ADMIN' && <AdminWorkspaceView />}
+          {activeWorkspace === 'PRINCIPAL' && <PrincipalWorkspaceView />}
+          {activeWorkspace === 'SECURITY' && <SecurityWorkspaceView />}
         </div>
       </div>
     </AppShell>
