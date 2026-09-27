@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  ednova-app:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    container_name: ednova_app_server
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_SUPABASE_URL=http://ednova-database:5432
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=ednova-production-anon-key-placeholder
+      - SUPABASE_SERVICE_ROLE_KEY=ednova-production-service-key-placeholder
+      - EDNOVA_SERVER_IDENTITY=sch-server-onpremise-001
+    depends_on:
+      - ednova-database
+    volumes:
+      - ednova_storage:/app/storage
+
+  ednova-database:
+    image: postgres:15-alpine
+    container_name: ednova_postgres_db
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=ednova_db
+      - POSTGRES_USER=ednova_admin
+      - POSTGRES_PASSWORD=ednova_secure_password_2026
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./app/supabase/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
+
+volumes:
+  postgres_data:
+  ednova_storage:
