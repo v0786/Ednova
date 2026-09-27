@@ -45,7 +45,7 @@ Mobile specifications in `docs/mobile/` correctly establish **ONE SINGLE MOBILE 
 
 | Topic | File & Line | Claim A | Claim B | Status / Audit Note |
 |---|---|---|---|---|
-| **Mobile Architecture** | `docs/mobile/MOBILE_IMPLEMENTATION.md:4` vs `docs/mobile/MOBILE_ARCHITECTURE.md:7` | "connects all four mobile role applications" | "ONE SINGLE MOBILE APPLICATION codebase (mobile-core)" | Legacy wording in `MOBILE_IMPLEMENTATION.md`. Core architecture (`MOBILE_ARCHITECTURE.md`) is authoritative. |
+| **Mobile Architecture** | `docs/mobile/MOBILE_IMPLEMENTATION.md` & `docs/mobile/MOBILE_PHASE_4_REPORT.md` | "connects all four mobile role applications" | "ONE SINGLE MOBILE APPLICATION codebase (mobile-core)" | **CORRECTED**: Legacy wording removed. Active mobile docs consistently define one single mobile app with dynamic role workspaces. |
 
 ---
 

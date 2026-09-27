@@ -1,24 +1,29 @@
 # EDNOVA Mobile Architecture & Integration Specification
 
 ## 1. Overview
-The **EDNOVA Mobile Client Suite** connects all four mobile role applications (**Principal App**, **Staff/Teacher App**, **Student App**, **Parent App**) directly to the authoritative EDNOVA backend.
+EDNOVA uses **one shared mobile application codebase**. After login, the application resolves the user's authorized role workspace (**Principal Workspace**, **Staff/Teacher Workspace**, **Student Workspace**, **Parent Workspace**, **Security Workspace**) and exposes only the capabilities permitted for that user by the authoritative EDNOVA backend.
 
 ```text
-                 EDNOVA SERVER
-                      │
-              Authoritative API
-                      │
-        ┌─────────────┼─────────────┐
-        │             │             │
-       WEB          MOBILE       OTHER CLIENTS
-        │             │
-        │       ┌─────┼─────┬─────┐
-        │       │     │     │     │
-        │   PRINCIPAL STAFF STUDENT PARENT
-        │
-        └──────────────┬──────────────┘
-                       │
-                  EDNOVA DB
+                         EDNOVA MOBILE APP
+                                │
+                                ▼
+                       AUTHENTICATED USER
+                                │
+                    ┌───────────┴───────────┐
+                    │                       │
+                SCHOOL ID                USER ROLE
+                    │                       │
+                    └───────────┬───────────┘
+                                ▼
+                       PERMISSION ENGINE
+                                │
+   ┌───────────┬───────────┬────┴──────┬───────────┬───────────┐
+   │           │           │           │           │           │
+STUDENT     PARENT      TEACHER      STAFF     PRINCIPAL   SECURITY
+   │           │           │           │           │           │
+   ▼           ▼           ▼           ▼           ▼           ▼
+Student     Parent      Teacher      Staff     Principal   Security
+Workspace  Workspace   Workspace   Workspace   Workspace   Workspace
 ```
 
 ---

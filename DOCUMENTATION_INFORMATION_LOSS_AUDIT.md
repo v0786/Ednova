@@ -25,7 +25,7 @@ This document records the findings of a comprehensive comparison between histori
 ---
 
 ## 5. Potential Contradictions & Legacy Wording
-- **Mobile Client Model Wording**: Legacy file `docs/mobile/MOBILE_IMPLEMENTATION.md` (Line 4) refers to "connects all four mobile role applications", whereas active canonical documents (`docs/core/01_EDNOVA_ARCHITECTURE.md` and `docs/mobile/MOBILE_ARCHITECTURE.md`) explicitly define **ONE SINGLE MOBILE APPLICATION** with dynamic role workspaces.
+- **Mobile Client Model Wording**: Legacy phrasing ("connects all four mobile role applications") in `docs/mobile/MOBILE_IMPLEMENTATION.md` and `docs/mobile/MOBILE_PHASE_4_REPORT.md` has been **fully corrected**. All active documentation in `docs/mobile/` now consistently defines **ONE SINGLE MOBILE APPLICATION** with dynamic role workspaces.
 
 ---
 
