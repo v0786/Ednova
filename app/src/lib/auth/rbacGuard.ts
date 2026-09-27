@@ -2,13 +2,17 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
 export type UserRole = 
+  | 'PLATFORM_OWNER'
+  | 'INSTITUTION_OWNER'
   | 'SUPER_ADMIN' 
   | 'SCHOOL_ADMIN' 
+  | 'ADMIN_STAFF'
   | 'PRINCIPAL' 
   | 'TEACHER' 
+  | 'SECURITY_GUARD'
+  | 'SECURITY_STAFF'
   | 'STUDENT' 
-  | 'PARENT' 
-  | 'SECURITY_STAFF';
+  | 'PARENT';
 
 export interface AuthSessionContext {
   userId: string;
