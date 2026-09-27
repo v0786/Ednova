@@ -184,6 +184,83 @@ export class EdnovaMobileClient {
     });
   }
 
+  // ==========================================
+  // STUDENT WORKSPACE API METHODS (PHASE 5.4)
+  // ==========================================
+
+  public async getStudentDashboard() {
+    return this.request(async () => {
+      if (this.session?.role !== 'STUDENT') {
+        throw { code: 'UNAUTHORIZED', message: 'UNAUTHORIZED_ROLE: Student role required' };
+      }
+      return {
+        studentName: 'Aarav Morgan',
+        gradeDivision: 'Class 10 - Section A',
+        attendancePercentage: 94.2,
+        upcomingClassesCount: 4,
+        nextExamDate: '2026-10-05',
+        announcementsCount: 2,
+      };
+    });
+  }
+
+  public async getStudentTimetable() {
+    return this.request(async () => {
+      if (this.session?.role !== 'STUDENT') {
+        throw { code: 'UNAUTHORIZED', message: 'UNAUTHORIZED_ROLE: Student role required' };
+      }
+      return [
+        { period: 1, subject: 'Mathematics', teacher: 'Dr. Smith', room: 'Room 204', startTime: '09:00 AM', endTime: '09:45 AM' },
+        { period: 2, subject: 'Physics', teacher: 'Prof. Davis', room: 'Lab 2', startTime: '09:50 AM', endTime: '10:35 AM' },
+        { period: 3, subject: 'English', teacher: 'Ms. Clara', room: 'Room 102', startTime: '10:50 AM', endTime: '11:35 AM' },
+        { period: 4, subject: 'Computer Science', teacher: 'Mr. Alan', room: 'Comp Lab', startTime: '11:40 AM', endTime: '12:25 PM' },
+      ];
+    });
+  }
+
+  public async getStudentMarks() {
+    return this.request(async () => {
+      if (this.session?.role !== 'STUDENT') {
+        throw { code: 'UNAUTHORIZED', message: 'UNAUTHORIZED_ROLE: Student role required' };
+      }
+      return [
+        { id: 'm-1', subject: 'Mathematics', assessmentTitle: 'Mid-Term Algebra', marksObtained: 88, maxMarks: 100, gradeLetter: 'A', date: '2026-09-15' },
+        { id: 'm-2', subject: 'Physics', assessmentTitle: 'Class Test 1', marksObtained: 23, maxMarks: 25, gradeLetter: 'A+', date: '2026-09-18' },
+        { id: 'm-3', subject: 'English', assessmentTitle: 'Essay Assessment', marksObtained: 42, maxMarks: 50, gradeLetter: 'B+', date: '2026-09-20' },
+      ];
+    });
+  }
+
+  public async getStudentAttendance() {
+    return this.request(async () => {
+      if (this.session?.role !== 'STUDENT') {
+        throw { code: 'UNAUTHORIZED', message: 'UNAUTHORIZED_ROLE: Student role required' };
+      }
+      return {
+        summary: { totalDays: 120, presentDays: 113, absentDays: 5, lateDays: 2, percentage: 94.2 },
+        recentLogs: [
+          { date: '2026-09-27', status: 'PRESENT', remarks: 'On time' },
+          { date: '2026-09-26', status: 'PRESENT', remarks: 'On time' },
+          { date: '2026-09-25', status: 'LATE', remarks: 'Arrived at 09:12 AM' },
+          { date: '2026-09-24', status: 'PRESENT', remarks: 'On time' },
+          { date: '2026-09-23', status: 'ABSENT', remarks: 'Medical leave' },
+        ]
+      };
+    });
+  }
+
+  public async submitStudentFeedback(subject: string, description: string, isConfidential: boolean) {
+    return this.request(async () => {
+      if (this.session?.role !== 'STUDENT') {
+        throw { code: 'UNAUTHORIZED', message: 'UNAUTHORIZED_ROLE: Student role required' };
+      }
+      if (!subject || !description) {
+        throw { code: 'VALIDATION_ERROR', message: 'Subject and description are required.' };
+      }
+      return { success: true, feedbackId: 'fb-' + Date.now() };
+    });
+  }
+
   /**
    * Resolves the active workspace dynamically from authenticated user role and permissions
    */

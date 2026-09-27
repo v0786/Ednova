@@ -40,8 +40,8 @@ Workspace  Workspace   Workspace   Workspace   Workspace   Workspace
 |---|---|---|---|
 | **5.1** | Native Mobile Shell | Application Shell, Navigation Container, Shared UI Shell & States | **COMPLETE** |
 | **5.2** | Authentication & Session Flow | Login, Logout, Session Restoration, Token Expiry | **COMPLETE** |
-| **5.3** | Shared Mobile Infrastructure | Shared SDK, Error Handler, Storage Strategy, Notification Client | PLANNED |
-| **5.4** | Student Workspace | Schedule, Marks, Attendance, Announcements, Profile, Feedback | PLANNED |
+| **5.3** | Shared Mobile Infrastructure | Shared SDK, Error Handler, Storage Strategy, Notification Client | **COMPLETE** |
+| **5.4** | Student Workspace | Schedule, Marks, Attendance, Announcements, Profile, Feedback | **COMPLETE** |
 | **5.5** | Parent Workspace | Child Selector, Attendance, Gate Alerts, Report Cards | PLANNED |
 | **5.6** | Teacher Workspace | Roster Attendance, Today's Notes, Assessment Marks, Timetable | PLANNED |
 | **5.7** | Staff / Admin Workspace | Roster Management, Operations Control, System Alerts | PLANNED |
