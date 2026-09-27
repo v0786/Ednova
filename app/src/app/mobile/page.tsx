@@ -15,21 +15,21 @@ export default function MobileSimulatorPage() {
               <Smartphone className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white">EDNOVA Mobile Client Suite & Principal Console</h1>
-              <p className="text-sm text-slate-400">Principal App, Staff/Teacher App, Student App, and Parent App client contracts.</p>
+              <h1 className="text-2xl font-bold text-white">EDNOVA Single Mobile App & Role Workspaces</h1>
+              <p className="text-sm text-slate-400">One mobile codebase with dynamic workspace resolution for Principal, Staff/Teacher, Student, Parent, and Security roles.</p>
             </div>
           </div>
           <span className="text-xs font-mono text-indigo-400 bg-indigo-500/10 px-3 py-1.5 rounded border border-indigo-500/20">
-            Mobile API SDK Connected
+            Single Mobile SDK Resolver Active
           </span>
         </div>
 
-        {/* 4 Mobile Apps Operational Views */}
+        {/* Dynamic Role Workspaces */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Principal Mobile App */}
+          {/* Principal Mobile Workspace */}
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <span className="text-xs font-mono font-bold text-indigo-400">1. PRINCIPAL APP</span>
+              <span className="text-xs font-mono font-bold text-indigo-400">1. PRINCIPAL WORKSPACE</span>
               <span className="text-[10px] font-mono bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded">CONNECTED</span>
             </div>
             <div className="space-y-2 text-xs font-mono">
@@ -42,10 +42,10 @@ export default function MobileSimulatorPage() {
             </div>
           </div>
 
-          {/* Staff/Teacher Mobile App */}
+          {/* Staff/Teacher Mobile Workspace */}
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <span className="text-xs font-mono font-bold text-indigo-400">2. STAFF / TEACHER APP</span>
+              <span className="text-xs font-mono font-bold text-indigo-400">2. STAFF / TEACHER WORKSPACE</span>
               <span className="text-[10px] font-mono bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded">CONNECTED</span>
             </div>
             <div className="space-y-2 text-xs font-mono">
@@ -58,10 +58,10 @@ export default function MobileSimulatorPage() {
             </div>
           </div>
 
-          {/* Student Mobile App */}
+          {/* Student Mobile Workspace */}
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <span className="text-xs font-mono font-bold text-indigo-400">3. STUDENT APP</span>
+              <span className="text-xs font-mono font-bold text-indigo-400">3. STUDENT WORKSPACE</span>
               <span className="text-[10px] font-mono bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded">CONNECTED</span>
             </div>
             <div className="space-y-2 text-xs font-mono">
@@ -74,10 +74,10 @@ export default function MobileSimulatorPage() {
             </div>
           </div>
 
-          {/* Parent Mobile App */}
+          {/* Parent Mobile Workspace */}
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <span className="text-xs font-mono font-bold text-indigo-400">4. PARENT APP</span>
+              <span className="text-xs font-mono font-bold text-indigo-400">4. PARENT WORKSPACE</span>
               <span className="text-[10px] font-mono bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded">CONNECTED</span>
             </div>
             <div className="space-y-2 text-xs font-mono">
