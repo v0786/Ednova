@@ -28,16 +28,27 @@ Workspace  Workspace   Workspace   Workspace   Workspace   Workspace
 
 ---
 
-## 2. Shared API Client SDK
+## 2. Shared API Client SDK & Request Layer
 The client SDK [`app/src/lib/mobileClientSdk.ts`](file:///home/devpc/Projects/EDNOVA/app/src/lib/mobileClientSdk.ts) handles:
 - Authentication & JWT Session Tokens
-- Strict Server-side Role Guard Validation
-- Linked Child Access Control for Parents
-- Push Notification Token Registration
+- Request Abstraction (`request()`) with 10s timeout handling
+- Error Normalization (`normalizeMobileError()`) preventing stack trace / SQL disclosure
+- Network State Awareness (`MobileNetworkState`)
+- Session Expiry Recovery (Auto-logout on 401 / UNAUTHORIZED)
+- Notification Token Registration Abstraction (`MobileNotificationClient`)
 
 ---
 
-## 3. Native App Configuration
+## 3. Shared Mobile Infrastructure Components
+Located under `app/src/components/mobile/`:
+- **`SharedOfflineBanner`**: Real-time accessible network status banner.
+- **`SharedLoadingState`**: Accessible loading spinner and progress label.
+- **`SharedErrorState`**: Safe error message container with retry action.
+- **`SharedEmptyState`**: Standardized zero-state indicator.
+
+---
+
+## 4. Native App Configuration
 The mobile app ecosystem is configured in [`app/app.json`](file:///home/devpc/Projects/EDNOVA/app/app.json) supporting native compilation for:
 - **Android**: Package `org.ednova.app`
 - **iOS**: Bundle Identifier `org.ednova.app`

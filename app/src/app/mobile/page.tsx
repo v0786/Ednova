@@ -9,6 +9,7 @@ import TeacherWorkspaceView from './workspaces/teacher/page';
 import AdminWorkspaceView from './workspaces/admin/page';
 import PrincipalWorkspaceView from './workspaces/principal/page';
 import SecurityWorkspaceView from './workspaces/security/page';
+import SharedOfflineBanner from '@/components/mobile/SharedOfflineBanner';
 
 export default function MobileSimulatorPage() {
   const [activeWorkspace, setActiveWorkspace] = useState<'STUDENT' | 'PARENT' | 'TEACHER' | 'ADMIN' | 'PRINCIPAL' | 'SECURITY'>('STUDENT');
@@ -106,6 +107,7 @@ export default function MobileSimulatorPage() {
 
             {/* Dynamic Workspace Container */}
             <div className="max-w-md mx-auto bg-slate-950 p-4 rounded-3xl border-4 border-slate-800 shadow-2xl min-h-[500px]">
+              <SharedOfflineBanner />
               {activeWorkspace === 'STUDENT' && <StudentWorkspaceView />}
               {activeWorkspace === 'PARENT' && <ParentWorkspaceView />}
               {activeWorkspace === 'TEACHER' && <TeacherWorkspaceView />}

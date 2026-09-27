@@ -1,4 +1,6 @@
 import { UserRole } from './auth/rbacGuard';
+import { normalizeMobileError, MobileError } from './mobile/mobileErrors';
+import { mobileNetworkState } from './mobile/networkState';
 
 export interface MobileSession {
   userId: string;
@@ -126,27 +128,60 @@ export class EdnovaMobileClient {
     }
   }
 
-  public async getPrincipalDashboardMetrics() {
-    if (this.session?.role !== 'PRINCIPAL') {
-      this.authState = 'UNAUTHORIZED';
-      throw new Error('UNAUTHORIZED_ROLE: Principal role required');
+  /**
+   * Shared Mobile Request Abstraction
+   * Handles timeouts, session verification, offline detection, and safe error normalization.
+   */
+  public async request<T>(action: () => Promise<T>, timeoutMs: number = 10000): Promise<T> {
+    if (!mobileNetworkState.isOnline()) {
+      this.authState = 'OFFLINE';
+      throw normalizeMobileError({ code: 'OFFLINE', message: 'You are currently offline.' });
     }
-    return {
-      todayAttendancePercentage: 96.4,
-      pendingApprovals: 2,
-      activeSafetyIncidents: 1,
-    };
+
+    if (!this.session && this.authState !== 'AUTHENTICATING') {
+      this.authState = 'UNAUTHENTICATED';
+      throw normalizeMobileError({ code: 'UNAUTHORIZED', message: 'Session invalid or missing.' });
+    }
+
+    try {
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject({ code: 'TIMEOUT', message: 'Request timed out.' }), timeoutMs)
+      );
+
+      const result = await Promise.race([action(), timeoutPromise]);
+      return result;
+    } catch (err: unknown) {
+      const normalized = normalizeMobileError(err);
+      if (normalized.code === 'UNAUTHORIZED' || normalized.code === 'SESSION_EXPIRED') {
+        this.authState = 'SESSION_EXPIRED';
+        await this.logout();
+      }
+      throw normalized;
+    }
+  }
+
+  public async getPrincipalDashboardMetrics() {
+    return this.request(async () => {
+      if (this.session?.role !== 'PRINCIPAL') {
+        throw { code: 'UNAUTHORIZED', message: 'UNAUTHORIZED_ROLE: Principal role required' };
+      }
+      return {
+        todayAttendancePercentage: 96.4,
+        pendingApprovals: 2,
+        activeSafetyIncidents: 1,
+      };
+    });
   }
 
   public async getParentChildrenRoster(parentId: string) {
-    if (this.session?.role !== 'PARENT') {
-      this.authState = 'UNAUTHORIZED';
-      throw new Error('UNAUTHORIZED_ROLE: Parent role required');
-    }
-    // Strictly backend authorized linked children lookup
-    return [
-      { studentId: 'stu-101', name: 'Alex Morgan', grade: 'Grade 7', division: 'Section A' }
-    ];
+    return this.request(async () => {
+      if (this.session?.role !== 'PARENT') {
+        throw { code: 'UNAUTHORIZED', message: 'UNAUTHORIZED_ROLE: Parent role required' };
+      }
+      return [
+        { studentId: 'stu-101', name: 'Alex Morgan', grade: 'Grade 7', division: 'Section A' }
+      ];
+    });
   }
 
   /**
