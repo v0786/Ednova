@@ -54,51 +54,44 @@ Focus:
 - operational summaries
 - reports
 
-## 3. Android Applications
+## 3. Mobile Client Application Architecture & Workspaces
 
-### Teacher App
-- timetable
-- assigned roster
-- attendance
-- today's notes
-- academic records within scope
-- feedback
-- notifications
+EDNOVA adopts **ONE SINGLE MOBILE APPLICATION** codebase (`mobile-core`) operating on top of a dynamic **Role & Permission Workspace Engine**:
 
-### School Admin App
-- dashboard
-- approvals
-- feedback
-- incidents
-- student/teacher lookup
-- notifications
-- reports
+```text
+                         EDNOVA MOBILE APP
+                                │
+                                ▼
+                       AUTHENTICATED USER
+                                │
+                    ┌───────────┴───────────┐
+                    │                       │
+                SCHOOL ID                USER ROLE
+                    │                       │
+                    └───────────┬───────────┘
+                                ▼
+                       PERMISSION ENGINE
+                                │
+   ┌───────────┬───────────┬────┴──────┬───────────┬───────────┐
+   │           │           │           │           │           │
+STUDENT     PARENT      TEACHER      STAFF     PRINCIPAL   SECURITY
+   │           │           │           │           │           │
+   ▼           ▼           ▼           ▼           ▼           ▼
+Student     Parent      Teacher      Staff     Principal   Security
+Workspace  Workspace   Workspace   Workspace   Workspace   Workspace
+```
 
-### Admin Staff App
-- operational workflows
-- authorized student lookup
-- announcements
-- attendance-related workflows
-- feedback
-- incidents
+### Design Philosophy
+> **SIMPLE → CLEAR → FRIENDLY → FAST → ACCESSIBLE → SECURE**
+- Icon + explicit text labels required for all statuses (`✓ Present`, `✕ Absent`, `⚠ Pending`).
 
-### Security Guard App
-- gate entry/exit
-- visitor check-in/out
-- pickup verification
-- security incident creation
-- emergency workflow
-
-The security role must not receive unrestricted academic data.
-
-### Student App
-- timetable
-- attendance
-- grades/results
-- class tests
-- announcements
-- feedback
-- notifications
+### Dynamic Role Workspaces
+- **Student Workspace**: Personalized timetable, attendance percentage, class test marks, letter grades, announcements.
+- **Parent Workspace**: Linked child selector (strictly validated against `parent_student_relationships` DB linkage), gate alerts, report cards.
+- **Teacher Workspace**: One-tap roster attendance entry, class schedule, test mark entry, Today's Notes publisher.
+- **Staff / Admin Workspace**: Institutional rosters, operational notifications, reports.
+- **Principal Workspace**: Executive decision desk, attendance aggregates, safety alerts, AI Assistant console.
+- **Security Guard Workspace**: Gate kiosk check-ins, visitor badge creation, emergency alerts. No unrestricted academic data.
 
 ## 4. Current Implemented Views
 

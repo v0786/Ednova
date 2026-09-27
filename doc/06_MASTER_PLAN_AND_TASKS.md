@@ -279,17 +279,17 @@ Examples:
 - AI-012 AI audit
 - AI-013 AI security tests
 
-### Mobile
-- MOB-001 shared API client
-- MOB-002 secure session storage
-- MOB-003 push foundation
-- MOB-004 teacher app
-- MOB-005 school admin app
-- MOB-006 admin staff app
-- MOB-007 security guard app
-- MOB-008 student app
-- MOB-009 offline/retry behavior
-- MOB-010 mobile security testing
+### Mobile Infrastructure
+- MOB-001 shared API client SDK (`mobileClientSdk.ts`)
+- MOB-002 secure session storage & native app config (`app.json`)
+- MOB-003 single mobile application architecture (`doc/SINGLE_MOBILE_APP_ARCHITECTURE.md`)
+- MOB-004 dynamic role workspace resolver (`resolveWorkspaceType()`)
+- MOB-005 student workspace
+- MOB-006 parent workspace (linked child selector)
+- MOB-007 teacher workspace
+- MOB-008 admin staff workspace
+- MOB-009 principal workspace
+- MOB-010 security guard workspace
 
 ### Deployment
 - DEP-001 deployment identity
