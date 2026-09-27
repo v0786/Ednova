@@ -48,7 +48,13 @@ Located under `app/src/components/mobile/`:
 
 ---
 
-## 4. Native App Configuration
+## 4. Workspaces Implementation Register
+- **Student Workspace (`Phase 5.4`)**: Personal schedule, marks, attendance, notices, confidential feedback.
+- **Parent Workspace (`Phase 5.5`)**: Multi-child switcher, linked student relationship validation, child attendance, timetable, academic results, gate entry alerts.
+
+---
+
+## 5. Native App Configuration
 The mobile app ecosystem is configured in [`app/app.json`](file:///home/devpc/Projects/EDNOVA/app/app.json) supporting native compilation for:
 - **Android**: Package `org.ednova.app`
 - **iOS**: Bundle Identifier `org.ednova.app`

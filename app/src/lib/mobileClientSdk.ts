@@ -173,14 +173,73 @@ export class EdnovaMobileClient {
     });
   }
 
-  public async getParentChildrenRoster(parentId: string) {
+  // ==========================================
+  // PARENT WORKSPACE API METHODS (PHASE 5.5)
+  // ==========================================
+
+  public async getLinkedChildren() {
     return this.request(async () => {
       if (this.session?.role !== 'PARENT') {
         throw { code: 'UNAUTHORIZED', message: 'UNAUTHORIZED_ROLE: Parent role required' };
       }
       return [
-        { studentId: 'stu-101', name: 'Alex Morgan', grade: 'Grade 7', division: 'Section A' }
+        { studentId: 'stu-101', name: 'Aarav Morgan', grade: 'Class 10', division: 'Section A', rollNumber: '10-A-14' },
+        { studentId: 'stu-102', name: 'Anaya Morgan', grade: 'Class 6', division: 'Section B', rollNumber: '06-B-08' },
       ];
+    });
+  }
+
+  public async getChildAcademicDetails(childStudentId: string) {
+    return this.request(async () => {
+      if (this.session?.role !== 'PARENT') {
+        throw { code: 'UNAUTHORIZED', message: 'UNAUTHORIZED_ROLE: Parent role required' };
+      }
+
+      // Validates linkage against parent_student_relationships
+      const linkedChildren = ['stu-101', 'stu-102'];
+      if (!linkedChildren.includes(childStudentId)) {
+        throw { code: 'FORBIDDEN', message: 'You do not have permission to access this student\'s information.' };
+      }
+
+      if (childStudentId === 'stu-101') {
+        return {
+          studentName: 'Aarav Morgan',
+          grade: 'Class 10 - Section A',
+          attendancePercentage: 94.2,
+          attendanceLogs: [
+            { date: 'Sep 27, 2026', status: 'PRESENT', remarks: 'On time' },
+            { date: 'Sep 26, 2026', status: 'PRESENT', remarks: 'On time' },
+            { date: 'Sep 25, 2026', status: 'LATE', remarks: 'Arrived at 09:12 AM' },
+          ],
+          timetable: [
+            { period: 1, subject: 'Mathematics', teacher: 'Dr. Smith', room: 'Room 204', time: '09:00 AM' },
+            { period: 2, subject: 'Physics', teacher: 'Prof. Davis', room: 'Lab 2', time: '09:50 AM' },
+          ],
+          results: [
+            { subject: 'Mathematics', title: 'Mid-Term Algebra', marks: '88 / 100', grade: 'A' },
+            { subject: 'Physics', title: 'Class Test 1', marks: '23 / 25', grade: 'A+' },
+          ],
+          gateStatus: { status: 'ENTERED', lastEventTime: '08:48 AM', location: 'Main Campus Gate' }
+        };
+      } else {
+        return {
+          studentName: 'Anaya Morgan',
+          grade: 'Class 6 - Section B',
+          attendancePercentage: 98.0,
+          attendanceLogs: [
+            { date: 'Sep 27, 2026', status: 'PRESENT', remarks: 'On time' },
+            { date: 'Sep 26, 2026', status: 'PRESENT', remarks: 'On time' },
+          ],
+          timetable: [
+            { period: 1, subject: 'English', teacher: 'Ms. Clara', room: 'Room 101', time: '09:00 AM' },
+            { period: 2, subject: 'Science', teacher: 'Mrs. Gable', room: 'Room 105', time: '09:50 AM' },
+          ],
+          results: [
+            { subject: 'English', title: 'Reading Assessment', marks: '48 / 50', grade: 'A+' },
+          ],
+          gateStatus: { status: 'ENTERED', lastEventTime: '08:42 AM', location: 'Junior Gate' }
+        };
+      }
     });
   }
 
