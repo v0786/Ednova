@@ -288,3 +288,45 @@ export async function getTeacherTodaySchedule(schoolId: string, academicYearId: 
 
   return { success: true, data: data as TimetableEntry[] };
 }
+
+export async function getStudentSchedule(schoolId: string, academicYearId: string, divisionId: string) {
+  const session = await verifyServerSession(['STUDENT', 'TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN', 'PARENT', 'PRINCIPAL']);
+  validateTenantAccess(schoolId, session);
+
+  const { data, error } = await supabase
+    .from('timetable_entries')
+    .select('*')
+    .eq('school_id', schoolId)
+    .eq('academic_year_id', academicYearId)
+    .eq('division_id', divisionId)
+    .order('period_number', { ascending: true });
+
+  if (error) {
+    return { success: false, error: error.message, data: [] };
+  }
+
+  return { success: true, data: data as TimetableEntry[] };
+}
+
+export async function getStudentTodaySchedule(schoolId: string, academicYearId: string, divisionId: string, dayOfWeekOverride?: number) {
+  const session = await verifyServerSession(['STUDENT', 'TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN', 'PARENT', 'PRINCIPAL']);
+  validateTenantAccess(schoolId, session);
+
+  const currentDay = dayOfWeekOverride || (new Date().getDay() === 0 ? 7 : new Date().getDay());
+
+  const { data, error } = await supabase
+    .from('timetable_entries')
+    .select('*')
+    .eq('school_id', schoolId)
+    .eq('academic_year_id', academicYearId)
+    .eq('division_id', divisionId)
+    .eq('day_of_week', currentDay)
+    .order('period_number', { ascending: true });
+
+  if (error) {
+    return { success: false, error: error.message, data: [] };
+  }
+
+  return { success: true, data: data as TimetableEntry[] };
+}
+

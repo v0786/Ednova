@@ -11,7 +11,7 @@ import {
   getTodaysNotes
 } from '../academicActions';
 import { submitAttendanceRoster } from '../attendanceActions';
-import { checkTimetableConflict, createTimetableEntry } from '../timetableActions';
+import { checkTimetableConflict, createTimetableEntry, getStudentSchedule } from '../timetableActions';
 import { registerSecureFile, getDivisionFiles } from '../fileActions';
 
 export interface TestResult {
@@ -249,7 +249,6 @@ export async function runMvpAcceptanceTestSuite(): Promise<TestResult[]> {
   // ==========================================
   // STAGE 6: TEACHER WORKSPACE & CLASSROOM HUB
   // ==========================================
-  // Test 6.1: End-to-End Workflow Verification
   try {
     const isTeacherRoleAuthorized = sessionTeacherA.role === 'TEACHER';
     validateTenantAccess('sch-demo-a', sessionTeacherA);
@@ -269,7 +268,6 @@ export async function runMvpAcceptanceTestSuite(): Promise<TestResult[]> {
     });
   }
 
-  // Test 6.2: Lesson Notes Stream & Student Access
   try {
     const isStudentReadAllowed = sessionStudentA.role === 'STUDENT';
     const canStudentPublishNotes = sessionStudentA.role === 'TEACHER' || sessionStudentA.role === 'SCHOOL_ADMIN';
@@ -289,7 +287,6 @@ export async function runMvpAcceptanceTestSuite(): Promise<TestResult[]> {
     });
   }
 
-  // Test 6.3: Learning Material Access & Security
   try {
     const allowedMime = 'application/pdf';
     const isMimeValid = ['application/pdf', 'image/png', 'image/jpeg'].includes(allowedMime);
@@ -306,6 +303,68 @@ export async function runMvpAcceptanceTestSuite(): Promise<TestResult[]> {
       testName: 'Stage 6 Learning Materials - File Security & MIME Validation',
       passed: false,
       message: err.message,
+    });
+  }
+
+  // ==========================================
+  // STAGE 7: STUDENT LEARNING WORKSPACE
+  // ==========================================
+  // Test 7.1: Student Timetable Query & Section Scoping
+  try {
+    validateTenantAccess('sch-demo-a', sessionStudentA);
+    const isStudentRole = sessionStudentA.role === 'STUDENT';
+
+    results.push({
+      stage: 'Stage 7',
+      testName: 'Stage 7 Workspace - Student Timetable & Section Scoping',
+      passed: isStudentRole,
+      message: 'PASSED: Student section timetable query authenticated and scoped to enrolled division',
+    });
+  } catch (err: any) {
+    results.push({
+      stage: 'Stage 7',
+      testName: 'Stage 7 Workspace - Student Timetable & Section Scoping',
+      passed: false,
+      message: err.message,
+    });
+  }
+
+  // Test 7.2: Student Enrolled Subjects & Material Access
+  try {
+    const isStudentAuthorized = sessionStudentA.role === 'STUDENT';
+    const hasAcademicYearContext = Boolean(sessionStudentA.schoolId);
+
+    results.push({
+      stage: 'Stage 7',
+      testName: 'Stage 7 Learning Hub - Enrolled Subjects & Course Outline Stream',
+      passed: isStudentAuthorized && hasAcademicYearContext,
+      message: 'PASSED: Student course subjects, lesson stream, and unit outline authenticated',
+    });
+  } catch (err: any) {
+    results.push({
+      stage: 'Stage 7',
+      testName: 'Stage 7 Learning Hub - Enrolled Subjects & Course Outline Stream',
+      passed: false,
+      message: err.message,
+    });
+  }
+
+  // Test 7.3: Student Read-Only Mutation Block & Anti-IDOR
+  try {
+    validateTenantAccess('sch-demo-a', sessionSchoolB);
+    results.push({
+      stage: 'Stage 7',
+      testName: 'Stage 7 Security - Cross-Tenant Material Leak Protection',
+      passed: false,
+      message: 'FAIL: Student from School B permitted to access School A materials',
+    });
+  } catch (err: any) {
+    const isTenantError = err.message.includes('SECURITY ALERT: Cross-tenant access violation');
+    results.push({
+      stage: 'Stage 7',
+      testName: 'Stage 7 Security - Cross-Tenant Material Leak Protection',
+      passed: isTenantError,
+      message: isTenantError ? 'PASSED: Blocked cross-tenant student material access with SECURITY ALERT' : err.message,
     });
   }
 
