@@ -1,216 +1,460 @@
 'use client';
 
-import React, { useState } from 'react';
-import Link from 'next/link';
+import React from 'react';
+import { AnimatedGradient } from '@/components/AnimatedGradient';
 import { 
-  Building2, 
-  Users, 
-  BookOpen, 
-  Calendar, 
   CheckCircle2, 
-  FileText, 
-  Award, 
+  Clock, 
+  ArrowRight, 
+  ExternalLink, 
   ShieldCheck, 
-  ArrowRight,
-  BookMarked,
-  Clock,
-  UserCheck,
-  Smartphone,
-  KeyRound
+  Layers, 
+  Database, 
+  Lock, 
+  Calendar, 
+  BookOpen, 
+  Users, 
+  Server,
+  FileCode,
+  Sparkles
 } from 'lucide-react';
 
-export default function Home() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'roles' | 'modules'>('overview');
+// Configuration Constant for EDNOVA Application Link
+const EDNOVA_APP_URL = "/login";
+const CREATOR_PORTFOLIO_URL = "https://github.com/v0786";
+
+export default function LandingPage() {
+  const scrollToProgress = () => {
+    const el = document.getElementById('progress');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col">
-      {/* Header Navigation */}
-      <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5 shrink-0">
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500/30 selection:text-indigo-200">
+      {/* Animated Hero Canvas */}
+      <AnimatedGradient variant="mist" speed={0.7} opacity={0.6} className="min-h-screen flex flex-col justify-between">
+        {/* Top Minimal Header */}
+        <header className="max-w-7xl mx-auto w-full px-6 py-6 flex items-center justify-between z-20">
+          <div className="flex items-center gap-3">
             <div className="h-9 w-9 rounded-xl bg-indigo-600 flex items-center justify-center font-bold text-xl text-white shadow-lg shadow-indigo-500/30">
               E
             </div>
-            <div>
-              <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                EDNOVA
-              </span>
-              <span className="text-xs ml-2 text-slate-400 font-mono hidden md:inline-block">
-                v1.0.0
-              </span>
+            <span className="font-extrabold text-xl tracking-tight text-white">
+              EDNOVA
+            </span>
+          </div>
+
+          <a
+            href={EDNOVA_APP_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-4 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-800 text-xs sm:text-sm font-semibold text-slate-200 transition flex items-center gap-2 backdrop-blur touch-target"
+          >
+            <span>Open EDNOVA App</span>
+            <ExternalLink className="w-3.5 h-3.5 text-indigo-400" />
+          </a>
+        </header>
+
+        {/* Hero Section */}
+        <main className="max-w-4xl mx-auto px-6 py-16 sm:py-24 text-center space-y-8 z-20">
+          {/* Status Badge */}
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-mono font-medium bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 backdrop-blur">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span>BUILDING IN PUBLIC</span>
+          </div>
+
+          <div className="space-y-4">
+            <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-white leading-none">
+              EDNOVA
+            </h1>
+            <p className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-indigo-300 via-slate-200 to-indigo-400 bg-clip-text text-transparent">
+              Digital Operating System for Schools
+            </p>
+          </div>
+
+          <p className="text-sm sm:text-base md:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed font-normal">
+            One connected platform for the academic and operational life of a school.
+          </p>
+
+          <p className="text-xs sm:text-sm text-slate-400 max-w-2xl mx-auto font-mono leading-relaxed">
+            EDNOVA is being built phase by phase — with the foundation, authentication, academic structure, attendance, teacher workflows and mobile architecture already taking shape.
+          </p>
+
+          {/* Primary CTA Buttons */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+            <button
+              onClick={scrollToProgress}
+              className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 font-bold text-white shadow-xl shadow-indigo-600/30 transition text-sm flex items-center justify-center gap-2 touch-target"
+            >
+              <span>Explore the Build</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+
+            <a
+              href={EDNOVA_APP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-800 font-semibold text-slate-200 transition text-sm flex items-center justify-center gap-2 backdrop-blur touch-target"
+            >
+              <span>Open EDNOVA App</span>
+              <ExternalLink className="w-4 h-4 text-indigo-400" />
+            </a>
+          </div>
+        </main>
+
+        <div className="pb-8 text-center z-20">
+          <button 
+            onClick={scrollToProgress}
+            className="text-xs font-mono text-slate-500 hover:text-slate-300 transition animate-bounce flex items-center justify-center gap-1 mx-auto"
+          >
+            Explore Build Progress ↓
+          </button>
+        </div>
+      </AnimatedGradient>
+
+      {/* Main Content Sections */}
+      <div className="max-w-6xl mx-auto px-6 py-20 space-y-28">
+        {/* What We Have Built Section */}
+        <section id="progress" className="space-y-12 scroll-mt-12">
+          <div className="space-y-3">
+            <span className="text-xs font-mono uppercase tracking-widest text-indigo-400">Verified Implementation Status</span>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+              WHAT&apos;S BEEN BUILT
+            </h2>
+            <p className="text-slate-400 text-sm sm:text-base max-w-2xl">
+              EDNOVA isn&apos;t just an idea. The foundation is already being engineered and verified against production benchmarks.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Foundation */}
+            <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4 shadow-xl">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-400">
+                    <Layers className="w-5 h-5" />
+                  </div>
+                  <h3 className="font-bold text-white text-lg">Foundation</h3>
+                </div>
+                <span className="font-mono text-sm font-bold text-indigo-400 bg-indigo-500/10 px-3 py-1 rounded-lg border border-indigo-500/20">
+                  ~90%
+                </span>
+              </div>
+              <ul className="space-y-2 text-xs sm:text-sm text-slate-300 font-mono">
+                <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Product architecture & SDLC foundation</li>
+                <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Backend-first authoritative API contracts</li>
+                <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> PostgreSQL multi-tenant database schema</li>
+                <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Canonical role-based authorization model</li>
+              </ul>
+            </div>
+
+            {/* Authentication & Identity */}
+            <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4 shadow-xl">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400">
+                    <Lock className="w-5 h-5" />
+                  </div>
+                  <h3 className="font-bold text-white text-lg">Authentication & Identity</h3>
+                </div>
+                <span className="font-mono text-sm font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-lg border border-emerald-500/20">
+                  100%
+                </span>
+              </div>
+              <ul className="space-y-2 text-xs sm:text-sm text-slate-300 font-mono">
+                <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Supabase Authentication engine</li>
+                <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Google OAuth identity integration</li>
+                <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Server-side session verification & cookies</li>
+                <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Dynamic role workspace resolution & security guard</li>
+              </ul>
+            </div>
+
+            {/* School & Academic Foundation */}
+            <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4 shadow-xl">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-400">
+                    <Database className="w-5 h-5" />
+                  </div>
+                  <h3 className="font-bold text-white text-lg">School & Academic Foundation</h3>
+                </div>
+                <span className="font-mono text-sm font-bold text-purple-400 bg-purple-500/10 px-3 py-1 rounded-lg border border-purple-500/20">
+                  ~90%+
+                </span>
+              </div>
+              <ul className="space-y-2 text-xs sm:text-sm text-slate-300 font-mono">
+                <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> School tenant provisioning (`createSchoolTenant`)</li>
+                <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Academic years, grades, divisions, subjects</li>
+                <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Student enrollment & roll number assignment</li>
+                <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Teacher subject & class assignments</li>
+              </ul>
+            </div>
+
+            {/* Attendance */}
+            <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4 shadow-xl">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-pink-500/10 text-pink-400">
+                    <Calendar className="w-5 h-5" />
+                  </div>
+                  <h3 className="font-bold text-white text-lg">Attendance System</h3>
+                </div>
+                <span className="font-mono text-sm font-bold text-pink-400 bg-pink-500/10 px-3 py-1 rounded-lg border border-pink-500/20">
+                  100%
+                </span>
+              </div>
+              <ul className="space-y-2 text-xs sm:text-sm text-slate-300 font-mono">
+                <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Roster attendance marking & idempotent upserts</li>
+                <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> PRESENT, ABSENT, LATE, HALF_DAY, EXCUSED</li>
+                <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Attendance correction request workflows</li>
+                <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Student personal attendance portal</li>
+              </ul>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 sm:gap-3 text-xs sm:text-sm font-medium overflow-x-auto touch-target scrollbar-none py-1">
-            <button 
-              onClick={() => setActiveTab('overview')}
-              className={`min-h-[40px] px-3 py-2 rounded-xl transition whitespace-nowrap touch-target ${activeTab === 'overview' ? 'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-600/30' : 'text-slate-400 hover:text-slate-200'}`}
-            >
-              Overview
-            </button>
-            <button 
-              onClick={() => setActiveTab('roles')}
-              className={`min-h-[40px] px-3 py-2 rounded-xl transition whitespace-nowrap touch-target ${activeTab === 'roles' ? 'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-600/30' : 'text-slate-400 hover:text-slate-200'}`}
-            >
-              Roles & Access
-            </button>
-            <button 
-              onClick={() => setActiveTab('modules')}
-              className={`min-h-[40px] px-3 py-2 rounded-xl transition whitespace-nowrap touch-target ${activeTab === 'modules' ? 'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-600/30' : 'text-slate-400 hover:text-slate-200'}`}
-            >
-              System Modules
-            </button>
-          </div>
+          {/* Major Milestone Card - Basic MVP */}
+          <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-indigo-950/60 via-slate-900 to-slate-950 border border-indigo-500/30 space-y-4 shadow-2xl relative overflow-hidden">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-full border border-emerald-500/30 flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4" /> MAJOR MILESTONE COMPLETED
+              </span>
+              <span className="text-xs font-mono text-slate-400">VERIFIED VERTICAL SLICE</span>
+            </div>
 
-          <div className="shrink-0 flex items-center gap-2">
-            <Link
-              href="/login"
-              className="min-h-[40px] px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs sm:text-sm transition shadow-lg shadow-indigo-600/20 touch-target flex items-center gap-1.5"
-            >
-              <KeyRound className="w-3.5 h-3.5" /> Sign In
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12 flex-1 space-y-10 w-full">
-        {/* Hero Section */}
-        <div className="relative rounded-3xl bg-gradient-to-b from-indigo-900/40 via-slate-900 to-slate-950 border border-indigo-500/20 p-6 sm:p-10 md:p-12 overflow-hidden shadow-2xl">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="relative z-10 max-w-3xl space-y-6">
-            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
-              <ShieldCheck className="w-4 h-4 text-indigo-400 shrink-0" />
-              Digital Academic Operating System for Schools & Colleges
-            </span>
-
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-white leading-tight">
-              Unified Academic Operating Infrastructure
-            </h1>
-
-            <p className="text-sm sm:text-base md:text-lg text-slate-300 leading-relaxed">
-              EDNOVA seamlessly connects multi-tenant school governance, dynamic scheduling, attendance tracking, 
-              Today&apos;s Notes, computer examinations, and automated learning gap identification into one responsive platform.
+            <h3 className="text-xl sm:text-2xl font-extrabold text-white">BASIC MVP (Phase-1 Foundation & Attendance)</h3>
+            <p className="text-xs sm:text-sm text-slate-300">
+              Proven end-to-end flow from institutional setup down to individual student attendance verification:
             </p>
 
-            <div className="flex flex-col sm:flex-row flex-wrap gap-3 pt-2">
-              <Link
-                href="/admin"
-                className="min-h-[48px] inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 font-bold text-white shadow-lg shadow-indigo-600/30 transition touch-target text-sm"
-              >
-                Admin Console <ArrowRight className="w-4 h-4" />
-              </Link>
-              <Link
-                href="/mobile"
-                className="min-h-[48px] inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 font-bold text-slate-200 transition touch-target text-sm"
-              >
-                <Smartphone className="w-4 h-4 text-indigo-400" /> Mobile Workspaces
-              </Link>
+            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 font-mono text-xs sm:text-sm text-indigo-300 flex flex-wrap items-center justify-between gap-2">
+              <span>School</span> → <span>Academic Year</span> → <span>Grade / Division</span> → <span>Student Enrollment</span> → <span>Teacher Assignment</span> → <span>Roster Attendance</span> → <span>Student View</span>
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* Feature Grid / Tab Content */}
-        {activeTab === 'overview' && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition space-y-3">
-              <div className="h-10 w-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400">
-                <Building2 className="w-5 h-5" />
-              </div>
-              <h3 className="text-lg font-bold text-white">Multi-Tenant Governance</h3>
-              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-                Complete isolated school multi-tenancy with strict PostgreSQL Row Level Security (RLS), historical enrollments, and academic year archiving.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition space-y-3">
-              <div className="h-10 w-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400">
-                <BookMarked className="w-5 h-5" />
-              </div>
-              <h3 className="text-lg font-bold text-white">Today&apos;s Notes & Learning</h3>
-              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-                Real-time daily lesson broadcasting, homework, concept mapping, and student catch-up portals (&quot;What I Missed&quot;) tied to attendance.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition space-y-3">
-              <div className="h-10 w-10 rounded-xl bg-pink-500/10 flex items-center justify-center text-pink-400">
-                <Award className="w-5 h-5" />
-              </div>
-              <h3 className="text-lg font-bold text-white">Computer Examinations</h3>
-              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-                Secure exam system with timed auto-save, question bank metadata, multiple item formats, and instant evaluation pipelines.
-              </p>
-            </div>
+        {/* Development Status Visualization (Timeline) */}
+        <section className="space-y-8">
+          <div className="space-y-2">
+            <span className="text-xs font-mono uppercase tracking-widest text-indigo-400">Engineering Lifecycle</span>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+              DEVELOPMENT TIMELINE
+            </h2>
           </div>
-        )}
 
-        {activeTab === 'roles' && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          <div className="space-y-3 font-mono text-xs sm:text-sm">
             {[
-              { role: 'SUPER_ADMIN', desc: 'Global platform governance, multi-school creation, tenant isolation oversight.', icon: ShieldCheck, href: '/admin' },
-              { role: 'SCHOOL_ADMIN', desc: 'School setup, academic year management, grade/division structure, staff provisioning.', icon: Building2, href: '/admin' },
-              { role: 'PRINCIPAL', desc: 'Academic audit oversight, attendance reports, school-wide metrics and approvals.', icon: UserCheck, href: '/mobile' },
-              { role: 'TEACHER', desc: 'Subject delivery, daily attendance marking, Today’s Notes authoring, exam creation.', icon: BookOpen, href: '/teacher' },
-              { role: 'STUDENT', desc: 'Personal schedule view, note reading, assignment submission, exam taking, gap revision.', icon: Users, href: '/student' },
-              { role: 'PARENT', desc: 'Child academic monitoring, attendance history, announcements, and direct report access.', icon: Calendar, href: '/mobile' },
-            ].map((r) => {
-              const IconComp = r.icon;
+              { name: 'FOUNDATION', status: 'COMPLETED', progress: '100%', detail: 'SDLC, PostgreSQL schema, RLS policies' },
+              { name: 'AUTHENTICATION', status: 'COMPLETED', progress: '100%', detail: 'Supabase Auth, Google OAuth, session cookies' },
+              { name: 'ACADEMIC STRUCTURE', status: 'COMPLETED', progress: '100%', detail: 'Schools, academic years, grades, enrollment' },
+              { name: 'ATTENDANCE', status: 'COMPLETED', progress: '100%', detail: 'Roster submit, status enums, student history' },
+              { name: 'BASIC MVP', status: 'MILESTONE', progress: '100%', detail: 'Verified vertical slice & production build' },
+              { name: 'ACADEMIC OPERATIONS', status: 'IN_PROGRESS', progress: 'BUILDING', detail: 'Dynamic scheduling, timetable & conflict checks' },
+              { name: 'TEACHER WORKSPACE', status: 'IN_PROGRESS', progress: 'BUILDING', detail: 'Class rosters, lesson logs, shift overview' },
+              { name: 'LEARNING MATERIALS', status: 'IN_PROGRESS', progress: 'BUILDING', detail: 'Read-only document preview (PDF, PY, DOCX)' },
+              { name: 'SCHOOL OPERATIONS', status: 'UPCOMING', progress: 'NEXT', detail: 'Principal operational controls & audit metrics' },
+              { name: 'MOBILE WORKSPACES', status: 'UPCOMING', progress: 'NEXT', detail: 'Capacitor native Android & iOS wrappers' },
+            ].map((item, idx) => {
+              const isCompleted = item.status === 'COMPLETED' || item.status === 'MILESTONE';
+              const isInProgress = item.status === 'IN_PROGRESS';
+
               return (
-                <Link key={r.role} href={r.href} className="p-5 rounded-2xl bg-slate-900/40 border border-slate-800 hover:border-indigo-500/40 transition group block">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2.5">
-                      <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
-                        <IconComp className="w-4 h-4" />
-                      </div>
-                      <span className="font-bold text-sm text-indigo-300 font-mono">{r.role}</span>
+                <div 
+                  key={idx}
+                  className={`p-4 rounded-xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
+                    isCompleted 
+                      ? 'bg-slate-900/60 border-slate-800 text-slate-200' 
+                      : isInProgress 
+                        ? 'bg-indigo-950/40 border-indigo-500/40 text-indigo-200' 
+                        : 'bg-slate-950/40 border-slate-900 text-slate-500'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    {isCompleted ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    ) : isInProgress ? (
+                      <span className="w-4 h-4 rounded-full border-2 border-indigo-400 border-t-transparent animate-spin shrink-0" />
+                    ) : (
+                      <Clock className="w-4 h-4 text-slate-600 shrink-0" />
+                    )}
+                    <div>
+                      <span className="font-bold text-white tracking-wide">{item.name}</span>
+                      <span className="block text-xs font-sans text-slate-400 mt-0.5">{item.detail}</span>
                     </div>
-                    <span className="text-xs text-slate-500 font-mono group-hover:translate-x-1 transition">Enter →</span>
                   </div>
-                  <p className="text-xs text-slate-400 leading-relaxed">{r.desc}</p>
-                </Link>
+
+                  <span className={`text-xs px-2.5 py-1 rounded font-mono font-bold ${
+                    isCompleted 
+                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                      : isInProgress 
+                        ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' 
+                        : 'bg-slate-900 text-slate-600 border border-slate-800'
+                  }`}>
+                    {item.progress}
+                  </span>
+                </div>
               );
             })}
           </div>
-        )}
+        </section>
 
-        {activeTab === 'modules' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-            {[
-              '1. School Management (Divisions, Grades, Academic Years)',
-              '2. People & Roles (Students, Teachers, Parents)',
-              '3. Timetable & Dynamic Scheduling',
-              '4. Daily Attendance & Audit Requests',
-              '5. Daily Academics & Today\'s Notes',
-              '6. Assignments & Project Lifecycle',
-              '7. Computer Examination Engine',
-              '8. Learning Gap Identification & Mastery',
-            ].map((m, idx) => (
-              <div key={idx} className="flex items-center gap-3 p-4 rounded-xl bg-slate-900/50 border border-slate-800">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span className="text-xs sm:text-sm font-medium text-slate-200">{m}</span>
+        {/* Currently Building Section */}
+        <section className="space-y-8">
+          <div className="space-y-2">
+            <span className="text-xs font-mono uppercase tracking-widest text-indigo-400">Active Engineering Phase</span>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+              CURRENTLY BUILDING
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Academic Operations */}
+            <div className="p-6 rounded-2xl bg-slate-900/70 border border-indigo-500/20 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-mono text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20 font-bold">
+                  IN PROGRESS
+                </span>
+                <Sparkles className="w-4 h-4 text-indigo-400" />
               </div>
-            ))}
-          </div>
-        )}
+              <h3 className="font-bold text-white text-base">Academic Operations</h3>
+              <ul className="text-xs text-slate-400 space-y-1.5 font-mono">
+                <li>• Dynamic class & lecture management</li>
+                <li>• Teacher ↔ subject assignment matrix</li>
+                <li>• Timetable conflict detection algorithms</li>
+                <li>• Teacher shifts and schedule rosters</li>
+              </ul>
+            </div>
 
-        {/* Status Banner */}
-        <div id="get-started" className="p-4 sm:p-6 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 shrink-0">
-              <CheckCircle2 className="w-6 h-6" />
+            {/* Teacher Workspace */}
+            <div className="p-6 rounded-2xl bg-slate-900/70 border border-indigo-500/20 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-mono text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20 font-bold">
+                  IN PROGRESS
+                </span>
+                <Users className="w-4 h-4 text-indigo-400" />
+              </div>
+              <h3 className="font-bold text-white text-base">Teacher Workspace</h3>
+              <ul className="text-xs text-slate-400 space-y-1.5 font-mono">
+                <li>• Dedicated operational teacher dashboard</li>
+                <li>• Today&apos;s classes & weekly timetable</li>
+                <li>• Direct roster attendance integration</li>
+                <li>• Lesson summary & homework logger</li>
+              </ul>
             </div>
-            <div>
-              <h4 className="font-bold text-white text-sm sm:text-base">System Operational & Responsive</h4>
-              <p className="text-xs text-slate-400">Next.js App Router • TailwindCSS • Supabase RLS Guard • Role Workspaces Active.</p>
+
+            {/* Learning Material */}
+            <div className="p-6 rounded-2xl bg-slate-900/70 border border-indigo-500/20 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-mono text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20 font-bold">
+                  IN PROGRESS
+                </span>
+                <FileCode className="w-4 h-4 text-indigo-400" />
+              </div>
+              <h3 className="font-bold text-white text-base">Learning Material</h3>
+              <ul className="text-xs text-slate-400 space-y-1.5 font-mono">
+                <li>• Teacher study note sharing</li>
+                <li>• Student read-only preview modal</li>
+                <li>• PDF, DOCX, PY, C, JSON file support</li>
+                <li>• Secure non-modifiable storage rules</li>
+              </ul>
             </div>
           </div>
-          <span className="text-xs font-mono px-3 py-2 rounded-xl bg-slate-950 text-slate-300 border border-slate-800 self-start md:self-auto">
-            Build Status: OK
-          </span>
+        </section>
+
+        {/* Product Philosophy */}
+        <section className="space-y-8">
+          <div className="space-y-2">
+            <span className="text-xs font-mono uppercase tracking-widest text-indigo-400">Architecture Principles</span>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+              BUILT DIFFERENTLY
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="p-5 rounded-xl bg-slate-900/50 border border-slate-800 space-y-2">
+              <Server className="w-5 h-5 text-indigo-400" />
+              <h3 className="font-bold text-white text-sm">Backend First</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">The backend is authoritative. Security and logic live on the server.</p>
+            </div>
+
+            <div className="p-5 rounded-xl bg-slate-900/50 border border-slate-800 space-y-2">
+              <ShieldCheck className="w-5 h-5 text-emerald-400" />
+              <h3 className="font-bold text-white text-sm">Security First</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">Multi-tenant isolation and PostgreSQL RLS policies enforce hard data boundaries.</p>
+            </div>
+
+            <div className="p-5 rounded-xl bg-slate-900/50 border border-slate-800 space-y-2">
+              <Calendar className="w-5 h-5 text-purple-400" />
+              <h3 className="font-bold text-white text-sm">Academic-Year Aware</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">Historical academic data is preserved permanently rather than overwritten.</p>
+            </div>
+
+            <div className="p-5 rounded-xl bg-slate-900/50 border border-slate-800 space-y-2">
+              <BookOpen className="w-5 h-5 text-pink-400" />
+              <h3 className="font-bold text-white text-sm">One Connected System</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">Students, teachers, staff, principals, and operations work inside one ecosystem.</p>
+            </div>
+          </div>
+        </section>
+
+        {/* Technical Stack Status */}
+        <section className="space-y-4 pt-6 border-t border-slate-900">
+          <span className="text-xs font-mono uppercase tracking-widest text-slate-500 block text-center">Verified Technical Foundation</span>
+          <div className="flex flex-wrap items-center justify-center gap-3 font-mono text-xs text-slate-400">
+            <span className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800">Next.js 16</span>
+            <span className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800">TypeScript 5</span>
+            <span className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800">PostgreSQL 15</span>
+            <span className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800">Supabase Auth & RLS</span>
+            <span className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800">Tailwind CSS v4</span>
+            <span className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800">Docker Infrastructure</span>
+          </div>
+        </section>
+
+        {/* Final CTA */}
+        <section className="p-8 sm:p-12 rounded-3xl bg-slate-900 border border-slate-800 text-center space-y-6 shadow-2xl">
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+            EDNOVA IS BEING BUILT.
+          </h2>
+          <p className="text-slate-400 text-sm sm:text-base max-w-xl mx-auto">
+            The first release is taking shape — one verified phase at a time.
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
+            <button
+              onClick={scrollToProgress}
+              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 font-bold text-white transition text-sm touch-target"
+            >
+              Follow the Build
+            </button>
+            <a
+              href={EDNOVA_APP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-slate-950 hover:bg-slate-850 border border-slate-800 font-semibold text-slate-200 transition text-sm flex items-center justify-center gap-2 touch-target"
+            >
+              <span>Open App</span>
+              <ExternalLink className="w-4 h-4 text-indigo-400" />
+            </a>
+          </div>
+        </section>
+      </div>
+
+      {/* Small Muted Footer */}
+      <footer className="border-t border-slate-900 bg-slate-950/90 py-8 px-6 text-xs text-slate-500 font-mono">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <span>© 2026 EDNOVA</span>
+          <a
+            href={CREATOR_PORTFOLIO_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-slate-300 transition flex items-center gap-1"
+          >
+            <span>Made by VAIBHAV</span>
+            <ExternalLink className="w-3 h-3 text-slate-500" />
+          </a>
         </div>
-      </main>
+      </footer>
     </div>
   );
 }
-
