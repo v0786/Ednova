@@ -890,5 +890,51 @@ export async function runMvpAcceptanceTestSuite(): Promise<TestResult[]> {
     });
   }
 
+  // ==========================================
+  // PHASE D: ONBOARDING & INSTITUTION ARCHITECTURE
+  // ==========================================
+  try {
+    const { runOnboardingAcceptanceTestSuite } = await import('./onboardingAcceptanceTest.test');
+    const onboardingResults = await runOnboardingAcceptanceTestSuite();
+    onboardingResults.forEach((r) => {
+      results.push({
+        stage: `Onboarding (${r.category})`,
+        testName: r.testName,
+        passed: r.passed,
+        message: r.message,
+      });
+    });
+  } catch (err: any) {
+    results.push({
+      stage: 'Onboarding',
+      testName: 'Onboarding & Institution Architecture Integration',
+      passed: false,
+      message: err.message,
+    });
+  }
+
   return results;
 }
+
+
+
+if (typeof require !== 'undefined' && require.main === module) {
+  runMvpAcceptanceTestSuite().then((results) => {
+    console.log('\n============================================================');
+    console.log('         EDNOVA MASTER ACCEPTANCE TEST SUITE RESULTS         ');
+    console.log('============================================================');
+    let passCount = 0;
+    results.forEach((r, idx) => {
+      const statusSymbol = r.passed ? '✓ PASS' : '✗ FAIL';
+      if (r.passed) passCount++;
+      console.log(`[${(idx + 1).toString().padStart(2, '0')}] ${statusSymbol} | [${r.stage}] ${r.testName}`);
+      console.log(`     └─ ${r.message}`);
+    });
+    console.log('------------------------------------------------------------');
+    console.log(`TOTAL SCENARIOS: ${results.length} | PASSED: ${passCount} | FAILED: ${results.length - passCount}`);
+    console.log(`SUCCESS RATE: ${((passCount / results.length) * 100).toFixed(1)}%`);
+    console.log('============================================================\n');
+    if (passCount !== results.length) process.exit(1);
+  });
+}
+

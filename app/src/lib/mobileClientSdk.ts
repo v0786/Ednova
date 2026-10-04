@@ -323,8 +323,9 @@ export class EdnovaMobileClient {
   /**
    * Resolves the active workspace dynamically from authenticated user role and permissions
    */
-  public resolveWorkspaceType(): 'STUDENT' | 'PARENT' | 'TEACHER' | 'ADMIN' | 'PRINCIPAL' | 'SECURITY' {
-    if (!this.session) return 'STUDENT';
+  public resolveWorkspaceType(): 'STUDENT' | 'PARENT' | 'TEACHER' | 'ADMIN' | 'PRINCIPAL' | 'SECURITY' | 'PENDING_ASSIGNMENT' {
+    if (!this.session) return 'PENDING_ASSIGNMENT';
+    if (!this.session.schoolId || this.session.schoolId === 'NOT_ASSIGNED') return 'PENDING_ASSIGNMENT';
 
     switch (this.session.role) {
       case 'PRINCIPAL':
@@ -343,10 +344,12 @@ export class EdnovaMobileClient {
       case 'PLATFORM_OWNER':
         return 'ADMIN';
       case 'STUDENT':
-      default:
         return 'STUDENT';
+      default:
+        return 'PENDING_ASSIGNMENT';
     }
   }
+
 
   // ==========================================
   // TEACHER WORKSPACE API METHODS (PHASE 5.6)
