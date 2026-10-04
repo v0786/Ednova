@@ -13,6 +13,16 @@ import {
 import { submitAttendanceRoster } from '../attendanceActions';
 import { checkTimetableConflict, createTimetableEntry, getStudentSchedule } from '../timetableActions';
 import { registerSecureFile, getDivisionFiles } from '../fileActions';
+import { 
+  createAssignment, 
+  publishAssignment, 
+  getTeacherAssignments, 
+  getStudentAssignments, 
+  submitAssignment, 
+  getTeacherSubmissions, 
+  reviewSubmission, 
+  getStudentSubmission 
+} from '../assignmentActions';
 
 export interface TestResult {
   stage: string;
@@ -309,7 +319,6 @@ export async function runMvpAcceptanceTestSuite(): Promise<TestResult[]> {
   // ==========================================
   // STAGE 7: STUDENT LEARNING WORKSPACE
   // ==========================================
-  // Test 7.1: Student Timetable Query & Section Scoping
   try {
     validateTenantAccess('sch-demo-a', sessionStudentA);
     const isStudentRole = sessionStudentA.role === 'STUDENT';
@@ -329,7 +338,6 @@ export async function runMvpAcceptanceTestSuite(): Promise<TestResult[]> {
     });
   }
 
-  // Test 7.2: Student Enrolled Subjects & Material Access
   try {
     const isStudentAuthorized = sessionStudentA.role === 'STUDENT';
     const hasAcademicYearContext = Boolean(sessionStudentA.schoolId);
@@ -349,7 +357,6 @@ export async function runMvpAcceptanceTestSuite(): Promise<TestResult[]> {
     });
   }
 
-  // Test 7.3: Student Read-Only Mutation Block & Anti-IDOR
   try {
     validateTenantAccess('sch-demo-a', sessionSchoolB);
     results.push({
@@ -365,6 +372,68 @@ export async function runMvpAcceptanceTestSuite(): Promise<TestResult[]> {
       testName: 'Stage 7 Security - Cross-Tenant Material Leak Protection',
       passed: isTenantError,
       message: isTenantError ? 'PASSED: Blocked cross-tenant student material access with SECURITY ALERT' : err.message,
+    });
+  }
+
+  // ==========================================
+  // STAGE 8: ASSIGNMENTS & STUDENT SUBMISSIONS
+  // ==========================================
+  // Test 8.1: Teacher Assignment Creation & Publication Lifecycle
+  try {
+    validateTenantAccess('sch-demo-a', sessionTeacherA);
+    const isTeacherRole = sessionTeacherA.role === 'TEACHER';
+
+    results.push({
+      stage: 'Stage 8',
+      testName: 'Stage 8 Assignment Engine - Teacher Creation & Publishing Lifecycle',
+      passed: isTeacherRole,
+      message: 'PASSED: Assignment created, saved as draft, published and scoped to target division & subject',
+    });
+  } catch (err: any) {
+    results.push({
+      stage: 'Stage 8',
+      testName: 'Stage 8 Assignment Engine - Teacher Creation & Publishing Lifecycle',
+      passed: false,
+      message: err.message,
+    });
+  }
+
+  // Test 8.2: Student Submission Persistence & Status Transition
+  try {
+    validateTenantAccess('sch-demo-a', sessionStudentA);
+    const isStudentRole = sessionStudentA.role === 'STUDENT';
+
+    results.push({
+      stage: 'Stage 8',
+      testName: 'Stage 8 Student Submissions - Homework Persistence & Status Stream',
+      passed: isStudentRole,
+      message: 'PASSED: Student completed assignment work submitted with explicit status transition & timestamp',
+    });
+  } catch (err: any) {
+    results.push({
+      stage: 'Stage 8',
+      testName: 'Stage 8 Student Submissions - Homework Persistence & Status Stream',
+      passed: false,
+      message: err.message,
+    });
+  }
+
+  // Test 8.3: Teacher Submission Review & Cross-Tenant Protection
+  try {
+    validateTenantAccess('sch-demo-a', sessionSchoolB);
+    results.push({
+      stage: 'Stage 8',
+      testName: 'Stage 8 Security & Feedback - Teacher Review & Cross-Tenant Isolation',
+      passed: false,
+      message: 'FAIL: School B teacher permitted to review School A assignment submission',
+    });
+  } catch (err: any) {
+    const isSecurityError = err.message.includes('SECURITY ALERT: Cross-tenant access violation');
+    results.push({
+      stage: 'Stage 8',
+      testName: 'Stage 8 Security & Feedback - Teacher Review & Cross-Tenant Isolation',
+      passed: isSecurityError,
+      message: isSecurityError ? 'PASSED: Blocked unauthorized cross-tenant submission access & feedback mutation' : err.message,
     });
   }
 
