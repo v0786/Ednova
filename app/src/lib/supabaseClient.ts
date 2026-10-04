@@ -1,9 +1,16 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321';
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://wvvfremfijuuzurbyyyl.supabase.co';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'demo-anon-key';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+export const SUPABASE_OAUTH_CONFIG = {
+  authorizationEndpoint: `${supabaseUrl}/auth/v1/oauth/authorize`,
+  tokenEndpoint: `${supabaseUrl}/auth/v1/oauth/token`,
+  jwksUri: `${supabaseUrl}/auth/v1/.well-known/jwks.json`,
+  oidcDiscoveryUrl: `${supabaseUrl}/auth/v1/.well-known/openid-configuration`,
+};
 
 export async function signInWithGoogle() {
   const isLocalSupabase = supabaseUrl.includes('127.0.0.1') || supabaseUrl.includes('localhost');
