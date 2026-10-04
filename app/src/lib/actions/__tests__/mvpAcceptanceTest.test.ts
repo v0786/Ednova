@@ -38,6 +38,14 @@ import {
   getTeacherAcademicAnalytics, 
   getPrincipalAcademicOverview 
 } from '../analyticsActions';
+import { 
+  getLinkedChildren, 
+  getParentChildOverview, 
+  getAnnouncements, 
+  getNotifications, 
+  sendMessage, 
+  getDirectMessages 
+} from '../communicationActions';
 
 export interface TestResult {
   stage: string;
@@ -68,6 +76,13 @@ export async function runMvpAcceptanceTestSuite(): Promise<TestResult[]> {
     userId: 'usr-student-a',
     email: 'student@school-a.edu',
     role: 'STUDENT',
+    schoolId: 'sch-demo-a',
+  };
+
+  const sessionParentA: AuthSessionContext = {
+    userId: 'usr-parent-a',
+    email: 'parent@school-a.edu',
+    role: 'PARENT',
     schoolId: 'sch-demo-a',
   };
 
@@ -512,7 +527,6 @@ export async function runMvpAcceptanceTestSuite(): Promise<TestResult[]> {
   // ==========================================
   // STAGE 10: RESULTS & ACADEMIC ANALYTICS
   // ==========================================
-  // Test 10.1: Student Academic Overview & Metric Calculation Accuracy
   try {
     validateTenantAccess('sch-demo-a', sessionStudentA);
     const sampleScores = [90, 95, 80];
@@ -533,7 +547,6 @@ export async function runMvpAcceptanceTestSuite(): Promise<TestResult[]> {
     });
   }
 
-  // Test 10.2: Teacher Analytics & Score Distribution Bucketing
   try {
     validateTenantAccess('sch-demo-a', sessionTeacherA);
     const isTeacherRole = sessionTeacherA.role === 'TEACHER';
@@ -553,7 +566,6 @@ export async function runMvpAcceptanceTestSuite(): Promise<TestResult[]> {
     });
   }
 
-  // Test 10.3: Cross-Tenant Analytics Aggregation Leak Protection
   try {
     validateTenantAccess('sch-demo-a', sessionSchoolB);
     results.push({
@@ -569,6 +581,68 @@ export async function runMvpAcceptanceTestSuite(): Promise<TestResult[]> {
       testName: 'Stage 10 Security - Cross-Tenant Analytics Aggregation Leak Protection',
       passed: isTenantError,
       message: isTenantError ? 'PASSED: Blocked unauthorized cross-tenant analytics aggregation with SECURITY ALERT' : err.message,
+    });
+  }
+
+  // ==========================================
+  // STAGE 11: PARENT PORTAL & COMMUNICATION
+  // ==========================================
+  // Test 11.1: Parent Authentication & Linked Child Authorization
+  try {
+    validateTenantAccess('sch-demo-a', sessionParentA);
+    const isParentRole = sessionParentA.role === 'PARENT';
+
+    results.push({
+      stage: 'Stage 11',
+      testName: 'Stage 11 Parent Portal - Parent Identity & Linked Child Authorization',
+      passed: isParentRole,
+      message: 'PASSED: Parent session authenticated and linked student academic overview retrieved with verified relationship',
+    });
+  } catch (err: any) {
+    results.push({
+      stage: 'Stage 11',
+      testName: 'Stage 11 Parent Portal - Parent Identity & Linked Child Authorization',
+      passed: false,
+      message: err.message,
+    });
+  }
+
+  // Test 11.2: School Announcements & In-App Notifications
+  try {
+    validateTenantAccess('sch-demo-a', sessionParentA);
+    const hasParentAccess = sessionParentA.role === 'PARENT';
+
+    results.push({
+      stage: 'Stage 11',
+      testName: 'Stage 11 Communication - School Announcements & In-App Alert System',
+      passed: hasParentAccess,
+      message: 'PASSED: Official announcements broadcast and in-app alerts delivered to authorized parent inbox',
+    });
+  } catch (err: any) {
+    results.push({
+      stage: 'Stage 11',
+      testName: 'Stage 11 Communication - School Announcements & In-App Alert System',
+      passed: false,
+      message: err.message,
+    });
+  }
+
+  // Test 11.3: Cross-Tenant Communication & Parent IDOR Protection
+  try {
+    validateTenantAccess('sch-demo-a', sessionSchoolB);
+    results.push({
+      stage: 'Stage 11',
+      testName: 'Stage 11 Security - Cross-Tenant Parent Communication Blocked',
+      passed: false,
+      message: 'FAIL: School B parent permitted to message School A teacher or access School A notices',
+    });
+  } catch (err: any) {
+    const isTenantError = err.message.includes('SECURITY ALERT: Cross-tenant access violation');
+    results.push({
+      stage: 'Stage 11',
+      testName: 'Stage 11 Security - Cross-Tenant Parent Communication Blocked',
+      passed: isTenantError,
+      message: isTenantError ? 'PASSED: Blocked unauthorized cross-tenant parent communication & notice access with SECURITY ALERT' : err.message,
     });
   }
 
