@@ -3,7 +3,7 @@ import { runSecurityChecks } from '../src/lib/actions/__tests__/authSecurityChec
 
 async function main() {
   console.log('====================================================');
-  console.log('EDNOVA BASIC MVP ACCEPTANCE & SECURITY TEST SUITE');
+  console.log('EDNOVA STAGES 1–5 PRODUCTION VERIFICATION SUITE');
   console.log('====================================================\n');
 
   console.log('1. Executing Auth Security & Tenant Isolation Guard Checks...');
@@ -14,22 +14,22 @@ async function main() {
     console.error('  ✕ [FAILED] Security check failed:', err.message);
   }
 
-  console.log('2. Executing End-to-End Acceptance Test Scenarios...');
+  console.log('2. Executing Stage-by-Stage Verification Scenarios...');
   const results = await runMvpAcceptanceTestSuite();
   
   let allPassed = true;
   for (const r of results) {
     const statusSymbol = r.passed ? '✓' : '✕';
     const statusText = r.passed ? '[VERIFIED]' : '[FAILED]';
-    console.log(`  ${statusSymbol} ${statusText} ${r.testName}: ${r.message}`);
+    console.log(`  ${statusSymbol} ${statusText} [${r.stage}] ${r.testName}: ${r.message}`);
     if (!r.passed) allPassed = false;
   }
 
   console.log('\n====================================================');
   if (allPassed) {
-    console.log('FINAL TEST RESULT: ALL MVP ACCEPTANCE TESTS PASSED (100%)');
+    console.log('FINAL STAGE 1–5 VERIFICATION RESULT: 100% PASSED');
   } else {
-    console.log('FINAL TEST RESULT: SOME TESTS FAILED');
+    console.log('FINAL VERIFICATION RESULT: SOME TESTS FAILED');
     process.exit(1);
   }
   console.log('====================================================');
