@@ -33,83 +33,80 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500/30 selection:text-indigo-200">
-      {/* Animated Hero Canvas */}
-      <AnimatedGradient variant="mist" speed={0.7} opacity={0.6} className="min-h-screen flex flex-col justify-between">
-        {/* Top Minimal Header */}
-        <header className="max-w-7xl mx-auto w-full px-6 py-6 flex items-center justify-between z-20">
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-indigo-600 flex items-center justify-center font-bold text-xl text-white shadow-lg shadow-indigo-500/30">
-              E
-            </div>
-            <span className="font-extrabold text-xl tracking-tight text-white">
-              EDNOVA
-            </span>
+    <AnimatedGradient variant="mist" speed={0.7} opacity={0.65} className="min-h-screen w-full">
+      {/* Top Minimal Header */}
+      <header className="max-w-7xl mx-auto w-full px-6 py-6 flex items-center justify-between z-20">
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-xl bg-indigo-600 flex items-center justify-center font-bold text-xl text-white shadow-lg shadow-indigo-500/30">
+            E
           </div>
-
-          <a
-            href={EDNOVA_APP_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-4 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-800 text-xs sm:text-sm font-semibold text-slate-200 transition flex items-center gap-2 backdrop-blur touch-target"
-          >
-            <span>Open EDNOVA App</span>
-            <ExternalLink className="w-3.5 h-3.5 text-indigo-400" />
-          </a>
-        </header>
-
-        {/* Hero Section with Path Drawing Name Animation */}
-        <main className="max-w-5xl mx-auto px-6 py-8 text-center space-y-6 z-20 flex flex-col items-center">
-          <PathDrawingPortfolioHero
-            brand="EDNOVA"
-            eyebrow="● BUILDING IN PUBLIC"
-            tagline="Digital Operating System for Schools"
-            fromColor="#818cf8"
-            toColor="#c084fc"
-            className="min-h-[320px] py-4"
-          >
-            <div className="space-y-6 max-w-2xl mx-auto -mt-12">
-              <p className="text-sm sm:text-base md:text-lg text-slate-300 leading-relaxed font-normal">
-                One connected platform for the academic and operational life of a school.
-              </p>
-
-              <p className="text-xs sm:text-sm text-slate-400 font-mono leading-relaxed">
-                EDNOVA is being built phase by phase — with the foundation, authentication, academic structure, attendance, teacher workflows and mobile architecture already taking shape.
-              </p>
-
-              {/* Primary CTA Buttons */}
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-                <button
-                  onClick={scrollToProgress}
-                  className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 font-bold text-white shadow-xl shadow-indigo-600/30 transition text-sm flex items-center justify-center gap-2 touch-target"
-                >
-                  <span>Explore the Build</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-
-                <a
-                  href={EDNOVA_APP_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-800 font-semibold text-slate-200 transition text-sm flex items-center justify-center gap-2 backdrop-blur touch-target"
-                >
-                  <span>Open EDNOVA App</span>
-                  <ExternalLink className="w-4 h-4 text-indigo-400" />
-                </a>
-              </div>
-            </div>
-          </PathDrawingPortfolioHero>
-        </main>
-
-        <div className="pb-8 text-center z-20">
-          <button 
-            onClick={scrollToProgress}
-            className="text-xs font-mono text-slate-500 hover:text-slate-300 transition animate-bounce flex items-center justify-center gap-1 mx-auto"
-          >
-            Explore Build Progress ↓
-          </button>
+          <span className="font-extrabold text-xl tracking-tight text-white">
+            EDNOVA
+          </span>
         </div>
-      </AnimatedGradient>
+
+        <a
+          href={EDNOVA_APP_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="px-4 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-800 text-xs sm:text-sm font-semibold text-slate-200 transition flex items-center gap-2 backdrop-blur touch-target"
+        >
+          <span>Open EDNOVA App</span>
+          <ExternalLink className="w-3.5 h-3.5 text-indigo-400" />
+        </a>
+      </header>
+
+      {/* Hero Section with Path Drawing Name Animation */}
+      <main className="max-w-5xl mx-auto px-6 py-8 text-center space-y-6 z-20 flex flex-col items-center">
+        <PathDrawingPortfolioHero
+          brand="EDNOVA"
+          eyebrow="● BUILDING IN PUBLIC"
+          tagline="Digital Operating System for Schools"
+          fromColor="#818cf8"
+          toColor="#c084fc"
+          className="min-h-[320px] py-4"
+        >
+          <div className="space-y-6 max-w-2xl mx-auto -mt-12">
+            <p className="text-sm sm:text-base md:text-lg text-slate-300 leading-relaxed font-normal">
+              One connected platform for the academic and operational life of a school.
+            </p>
+
+            <p className="text-xs sm:text-sm text-slate-400 font-mono leading-relaxed">
+              EDNOVA is being built phase by phase — with the foundation, authentication, academic structure, attendance, teacher workflows and mobile architecture already taking shape.
+            </p>
+
+            {/* Primary CTA Buttons */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+              <button
+                onClick={scrollToProgress}
+                className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 font-bold text-white shadow-xl shadow-indigo-600/30 transition text-sm flex items-center justify-center gap-2 touch-target"
+              >
+                <span>Explore the Build</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+
+              <a
+                href={EDNOVA_APP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-800 font-semibold text-slate-200 transition text-sm flex items-center justify-center gap-2 backdrop-blur touch-target"
+              >
+                <span>Open EDNOVA App</span>
+                <ExternalLink className="w-4 h-4 text-indigo-400" />
+              </a>
+            </div>
+          </div>
+        </PathDrawingPortfolioHero>
+      </main>
+
+      <div className="pb-8 text-center z-20">
+        <button 
+          onClick={scrollToProgress}
+          className="text-xs font-mono text-slate-500 hover:text-slate-300 transition animate-bounce flex items-center justify-center gap-1 mx-auto"
+        >
+          Explore Build Progress ↓
+        </button>
+      </div>
 
       {/* Main Content Sections */}
       <div className="max-w-6xl mx-auto px-6 py-20 space-y-28">
@@ -452,6 +449,6 @@ export default function LandingPage() {
           </a>
         </div>
       </footer>
-    </div>
+    </AnimatedGradient>
   );
 }

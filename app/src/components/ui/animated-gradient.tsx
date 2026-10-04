@@ -475,13 +475,13 @@ export function AnimatedGradient({
   return (
     <div
       className={cn(
-        "relative overflow-hidden bg-white dark:bg-black",
+        "relative min-h-screen w-full bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500/30 selection:text-indigo-200",
         className,
       )}
     >
       <canvas
         ref={canvasRef}
-        className="absolute inset-0 h-full w-full"
+        className="fixed inset-0 h-full w-full pointer-events-none z-0"
         style={{ opacity }}
       />
       {children && (
