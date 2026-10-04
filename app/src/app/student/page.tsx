@@ -1,14 +1,16 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AppShell from '@/components/AppShell';
 import { BookOpen, Calendar, Award, ShieldCheck, FileText, Eye, Lock, X, Download, Code, FileCode, CheckCircle2 } from 'lucide-react';
+import { getTodaysNotes } from '@/lib/actions/academicActions';
+import { getDivisionFiles, SharedFileMetadata } from '@/lib/actions/fileActions';
 
 interface StudyMaterial {
   id: string;
   title: string;
   subject: string;
-  fileType: 'PDF' | 'DOCX' | 'PY' | 'C' | 'JSON' | 'TXT';
+  fileType: string;
   fileName: string;
   dateShared: string;
   teacher: string;
@@ -50,6 +52,26 @@ const SAMPLE_MATERIALS: StudyMaterial[] = [
 
 export default function StudentWebPage() {
   const [selectedMaterial, setSelectedMaterial] = useState<StudyMaterial | null>(null);
+  const [liveNotes, setLiveNotes] = useState<any[]>([]);
+  const [liveFiles, setLiveFiles] = useState<SharedFileMetadata[]>([]);
+
+  useEffect(() => {
+    async function loadStudentData() {
+      try {
+        const notesRes = await getTodaysNotes('SCH-DEMO-001', 'div-7a');
+        if (notesRes.success && notesRes.data) {
+          setLiveNotes(notesRes.data);
+        }
+        const filesRes = await getDivisionFiles('SCH-DEMO-001', 'div-7a');
+        if (filesRes.success && filesRes.data) {
+          setLiveFiles(filesRes.data);
+        }
+      } catch (err) {
+        console.error('Error fetching student academic content:', err);
+      }
+    }
+    loadStudentData();
+  }, []);
 
   return (
     <AppShell userRole="STUDENT" userName="Alex Morgan">
@@ -121,6 +143,41 @@ export default function StudentWebPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Live Published Lesson Notes */}
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              <FileText className="w-5 h-5 text-indigo-400" /> Today&apos;s Broadcasted Lesson Notes
+            </h2>
+            <span className="text-xs font-mono text-purple-400 bg-purple-500/10 px-2.5 py-1 rounded border border-purple-500/20 font-bold">
+              {liveNotes.length} Broadcasted Notes
+            </span>
+          </div>
+
+          {liveNotes.length === 0 ? (
+            <div className="p-6 text-center text-slate-500 text-xs font-mono border border-dashed border-slate-800 rounded-xl">
+              No lesson notes broadcasted for your section today yet.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {liveNotes.map((note) => (
+                <div key={note.id} className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+                  <div className="flex justify-between items-center text-indigo-400 font-mono text-xs">
+                    <span className="font-bold">{note.topic}</span>
+                    <span>{note.date}</span>
+                  </div>
+                  <p className="text-xs text-slate-300 leading-relaxed font-sans">{note.summary}</p>
+                  {note.homework_summary && (
+                    <div className="text-[11px] text-amber-400 font-mono bg-amber-500/10 px-2.5 py-1 rounded border border-amber-500/20 mt-1">
+                      Homework: {note.homework_summary}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Teacher Shared Learning Materials & In-App Preview Section */}
