@@ -43,6 +43,16 @@ export default function LoginPage() {
       if (authError) {
         setError(authError.message || 'Google authentication failed.');
         setGoogleLoading(false);
+      } else if ((data as any)?.isDemoRedirect) {
+        setTimeout(() => {
+          if (role === 'TEACHER') router.push('/teacher');
+          else if (role === 'STUDENT') router.push('/student');
+          else if (role === 'PARENT') router.push('/mobile');
+          else if (role === 'PLATFORM_OWNER' || role === 'INSTITUTION_OWNER') router.push('/owner');
+          else router.push('/admin');
+        }, 500);
+      } else if (data?.url) {
+        window.location.href = data.url;
       }
     } catch (err: any) {
       setError(err.message || 'Failed to initiate Google OAuth via Supabase.');
