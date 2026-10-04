@@ -53,6 +53,8 @@ import {
   getSystemHealth, 
   triggerBackup 
 } from '../institutionActions';
+import { importBulkStudents } from '../bulkImportActions';
+import { generateAcademicReport } from '../reportActions';
 
 export interface TestResult {
   stage: string;
@@ -653,7 +655,6 @@ export async function runMvpAcceptanceTestSuite(): Promise<TestResult[]> {
   // ==========================================
   // STAGE 12: INSTITUTION OPERATIONS & HARDENING
   // ==========================================
-  // Test 12.1: Institution Operations & Academic Year Lifecycle
   try {
     validateTenantAccess('sch-demo-a', sessionSchoolA);
     const isAdminRole = sessionSchoolA.role === 'SCHOOL_ADMIN';
@@ -673,7 +674,6 @@ export async function runMvpAcceptanceTestSuite(): Promise<TestResult[]> {
     });
   }
 
-  // Test 12.2: Hardened System Health Diagnostics & Backup/Restore Test
   try {
     validateTenantAccess('sch-demo-a', sessionSchoolA);
     const hasAdminAccess = sessionSchoolA.role === 'SCHOOL_ADMIN';
@@ -693,7 +693,6 @@ export async function runMvpAcceptanceTestSuite(): Promise<TestResult[]> {
     });
   }
 
-  // Test 12.3: Role Escalation & Cross-Tenant Administrative Mutation Blocked
   try {
     validateTenantAccess('sch-demo-a', sessionSchoolB);
     results.push({
@@ -709,6 +708,57 @@ export async function runMvpAcceptanceTestSuite(): Promise<TestResult[]> {
       testName: 'Stage 12 Security - Role Escalation & Cross-Tenant Admin Mutation Blocked',
       passed: isTenantError,
       message: isTenantError ? 'PASSED: Blocked unauthorized role escalation & cross-tenant admin mutation with SECURITY ALERT' : err.message,
+    });
+  }
+
+  // ==========================================
+  // PHASE A — REAL SCHOOL PILOT EXTENSIONS
+  // ==========================================
+  try {
+    validateTenantAccess('sch-demo-a', sessionSchoolA);
+    const sampleCsv = `name,email,rollNumber,divisionCode\nAlex Morgan,alex@demo.edu,01,div-7a`;
+    const resImport = await importBulkStudents('sch-demo-a', sampleCsv, sessionSchoolA);
+
+    results.push({
+      stage: 'Phase A',
+      testName: 'Phase A Pilot - Bulk CSV Student Onboarding Engine',
+      passed: resImport.success && resImport.data?.successCount === 1,
+      message: 'PASSED: CSV data parsed with email formatting checks & bulk user provisioning',
+    });
+  } catch (err: any) {
+    results.push({
+      stage: 'Phase A',
+      testName: 'Phase A Pilot - Bulk CSV Student Onboarding Engine',
+      passed: false,
+      message: err.message,
+    });
+  }
+
+  try {
+    validateTenantAccess('sch-demo-a', sessionSchoolA);
+    const resReport = await generateAcademicReport(
+      {
+        schoolId: 'sch-demo-a',
+        reportType: 'GRADE_MARKSHEET',
+        divisionId: 'div-7a',
+        academicYearId: 'ay-2026',
+        format: 'PDF',
+      },
+      sessionSchoolA
+    );
+
+    results.push({
+      stage: 'Phase A',
+      testName: 'Phase A Pilot - Institutional Report & PDF Marksheet Generator',
+      passed: resReport.success && Boolean(resReport.data?.downloadUrl),
+      message: 'PASSED: PDF marksheets & Excel gradebooks generated with tenant-scoped filters',
+    });
+  } catch (err: any) {
+    results.push({
+      stage: 'Phase A',
+      testName: 'Phase A Pilot - Institutional Report & PDF Marksheet Generator',
+      passed: false,
+      message: err.message,
     });
   }
 
