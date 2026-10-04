@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Building2, Calendar, Shield, Save, CheckCircle } from 'lucide-react';
+import { Building2, Calendar, Shield, Save, CheckCircle, AlertCircle } from 'lucide-react';
+import { createSchoolTenant, createAcademicYear } from '@/lib/actions/academicActions';
 
 export default function SchoolSetupPage() {
   const [formData, setFormData] = useState({
@@ -12,11 +13,46 @@ export default function SchoolSetupPage() {
     address: '',
   });
 
+  const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [provisionedData, setProvisionedData] = useState<{ schoolId?: string; code?: string }>({});
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    setLoading(true);
+    setErrorMsg('');
+
+    try {
+      const res = await createSchoolTenant({
+        name: formData.schoolName,
+        code: formData.schoolCode,
+        contactEmail: formData.contactEmail,
+        address: formData.address,
+      });
+
+      if (!res.success || !res.data) {
+        setErrorMsg(res.error || 'Failed to provision school tenant.');
+        setLoading(false);
+        return;
+      }
+
+      // Initialize Academic Year
+      const yearRes = await createAcademicYear({
+        schoolId: res.data.id,
+        name: formData.academicYear,
+        startDate: '2026-06-01',
+        endDate: '2027-04-30',
+        isCurrent: true,
+      });
+
+      setProvisionedData({ schoolId: res.data.id, code: res.data.code });
+      setSubmitted(true);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'An unexpected error occurred during provisioning.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -32,12 +68,19 @@ export default function SchoolSetupPage() {
           </div>
         </div>
 
+        {errorMsg && (
+          <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-300 text-xs flex items-center gap-2.5">
+            <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+            <span className="font-medium">{errorMsg}</span>
+          </div>
+        )}
+
         {submitted ? (
           <div className="p-6 bg-emerald-950/40 border border-emerald-500/30 rounded-2xl flex items-center gap-4 text-emerald-300">
             <CheckCircle className="w-8 h-8 text-emerald-400 shrink-0" />
             <div>
               <h3 className="font-bold text-lg">School Tenant Provisioned Successfully</h3>
-              <p className="text-sm text-emerald-400/80">Tenant boundaries and initial academic year initialized.</p>
+              <p className="text-sm text-emerald-400/80">Tenant boundaries and initial academic year initialized ({formData.academicYear}).</p>
             </div>
           </div>
         ) : (
@@ -111,9 +154,19 @@ export default function SchoolSetupPage() {
               </span>
               <button 
                 type="submit"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-6 py-3 rounded-xl shadow-lg shadow-indigo-600/30 transition text-sm touch-target"
+                disabled={loading}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-6 py-3 rounded-xl shadow-lg shadow-indigo-600/30 transition text-sm touch-target disabled:opacity-50"
               >
-                <Save className="w-4 h-4" /> Complete Provisioning
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Provisioning...
+                  </span>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" /> Complete Provisioning
+                  </>
+                )}
               </button>
             </div>
           </form>

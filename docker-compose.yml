@@ -33,6 +33,16 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./app/supabase/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
+      - ./app/supabase/migrations/02_security_gate_domain.sql:/docker-entrypoint-initdb.d/02_security_gate_domain.sql
+      - ./app/supabase/migrations/03_security_gate_tables.sql:/docker-entrypoint-initdb.d/03_security_gate_tables.sql
+      - ./app/supabase/migrations/04_timetable_and_calendar.sql:/docker-entrypoint-initdb.d/04_timetable_and_calendar.sql
+      - ./app/supabase/migrations/05_attendance_system.sql:/docker-entrypoint-initdb.d/05_attendance_system.sql
+      - ./app/supabase/migrations/06_feedback_and_incidents.sql:/docker-entrypoint-initdb.d/06_feedback_and_incidents.sql
+      - ./app/supabase/migrations/07_license_and_system_health.sql:/docker-entrypoint-initdb.d/07_license_and_system_health.sql
+      - ./app/supabase/migrations/08_college_academic_structure.sql:/docker-entrypoint-initdb.d/08_college_academic_structure.sql
+      - ./app/supabase/migrations/09_append_only_audit_locks.sql:/docker-entrypoint-initdb.d/09_append_only_audit_locks.sql
+      - ./app/supabase/migrations/10_canonical_roles_and_notifications.sql:/docker-entrypoint-initdb.d/10_canonical_roles_and_notifications.sql
+      - ./app/supabase/migrations/11_complete_backend_entities.sql:/docker-entrypoint-initdb.d/11_complete_backend_entities.sql
 
 volumes:
   postgres_data:
