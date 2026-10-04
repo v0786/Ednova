@@ -268,13 +268,15 @@ export type PathDrawingPortfolioHeroProps = {
   fromColor?: string;
   /** Gradient end color */
   toColor?: string;
+  /** Whether to loop text drawing animation continuously */
+  loop?: boolean;
   /** Extra slot (for follow-up sections) */
   children?: ReactNode;
   className?: string;
 };
 
 /**
- * Portfolio hero: path-drawn name on loop + soft entrance fade.
+ * Portfolio hero: path-drawn name + soft entrance fade.
  * Transparent background — place it over your own page backdrop.
  */
 export default function PathDrawingPortfolioHero({
@@ -283,6 +285,7 @@ export default function PathDrawingPortfolioHero({
   eyebrow = "Portfolio",
   fromColor,
   toColor,
+  loop = false,
   children,
   className,
 }: PathDrawingPortfolioHeroProps) {
@@ -336,7 +339,7 @@ export default function PathDrawingPortfolioHero({
             viewBoxHeight={name.length > 8 ? 200 : 240}
             strokeWidth={2.4}
             durationSec={5.5}
-            loop
+            loop={loop}
           />
         </motion.div>
 
