@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { AnimatedGradient } from '@/components/AnimatedGradient';
+import { AnimatedGradient } from '@/components/ui/animated-gradient';
 import { 
   CheckCircle2, 
   Clock, 
