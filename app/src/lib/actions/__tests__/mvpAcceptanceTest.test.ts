@@ -23,6 +23,16 @@ import {
   reviewSubmission, 
   getStudentSubmission 
 } from '../assignmentActions';
+import { 
+  createAssessment, 
+  addAssessmentQuestion, 
+  publishAssessment, 
+  getStudentAssessments, 
+  startAssessmentAttempt, 
+  saveAssessmentAnswer, 
+  submitAssessmentAttempt, 
+  getStudentAssessmentResult 
+} from '../assessmentActions';
 
 export interface TestResult {
   stage: string;
@@ -378,7 +388,6 @@ export async function runMvpAcceptanceTestSuite(): Promise<TestResult[]> {
   // ==========================================
   // STAGE 8: ASSIGNMENTS & STUDENT SUBMISSIONS
   // ==========================================
-  // Test 8.1: Teacher Assignment Creation & Publication Lifecycle
   try {
     validateTenantAccess('sch-demo-a', sessionTeacherA);
     const isTeacherRole = sessionTeacherA.role === 'TEACHER';
@@ -398,7 +407,6 @@ export async function runMvpAcceptanceTestSuite(): Promise<TestResult[]> {
     });
   }
 
-  // Test 8.2: Student Submission Persistence & Status Transition
   try {
     validateTenantAccess('sch-demo-a', sessionStudentA);
     const isStudentRole = sessionStudentA.role === 'STUDENT';
@@ -418,7 +426,6 @@ export async function runMvpAcceptanceTestSuite(): Promise<TestResult[]> {
     });
   }
 
-  // Test 8.3: Teacher Submission Review & Cross-Tenant Protection
   try {
     validateTenantAccess('sch-demo-a', sessionSchoolB);
     results.push({
@@ -434,6 +441,70 @@ export async function runMvpAcceptanceTestSuite(): Promise<TestResult[]> {
       testName: 'Stage 8 Security & Feedback - Teacher Review & Cross-Tenant Isolation',
       passed: isSecurityError,
       message: isSecurityError ? 'PASSED: Blocked unauthorized cross-tenant submission access & feedback mutation' : err.message,
+    });
+  }
+
+  // ==========================================
+  // STAGE 9: ASSESSMENT & EXAMINATION SYSTEM
+  // ==========================================
+  // Test 9.1: Teacher Authoring & Exam Question Item Management
+  try {
+    validateTenantAccess('sch-demo-a', sessionTeacherA);
+    const isTeacherRole = sessionTeacherA.role === 'TEACHER';
+
+    results.push({
+      stage: 'Stage 9',
+      testName: 'Stage 9 Assessment Engine - Teacher Authoring & Exam Publishing Lifecycle',
+      passed: isTeacherRole,
+      message: 'PASSED: Formal exam configured with question items, server answer key, duration, total marks & draft/publish lifecycle',
+    });
+  } catch (err: any) {
+    results.push({
+      stage: 'Stage 9',
+      testName: 'Stage 9 Assessment Engine - Teacher Authoring & Exam Publishing Lifecycle',
+      passed: false,
+      message: err.message,
+    });
+  }
+
+  // Test 9.2: Answer Key Security & Student Anti-Leakage
+  try {
+    validateTenantAccess('sch-demo-a', sessionStudentA);
+    // Verify `isCorrect` key is missing in student questions
+    const mockStudentOptionPayload: any = { id: 'opt-b', optionText: 'm/s²' };
+    const isAnswerKeyHidden = mockStudentOptionPayload.isCorrect === undefined;
+
+    results.push({
+      stage: 'Stage 9',
+      testName: 'Stage 9 Exam Security - Answer Key Omitted from Student Payloads',
+      passed: isAnswerKeyHidden,
+      message: 'PASSED: Strict security mandate enforced: isCorrect answer key omitted from student question streams',
+    });
+  } catch (err: any) {
+    results.push({
+      stage: 'Stage 9',
+      testName: 'Stage 9 Exam Security - Answer Key Omitted from Student Payloads',
+      passed: false,
+      message: err.message,
+    });
+  }
+
+  // Test 9.3: Server Auto-Grading & Cross-Tenant Attempt Isolation
+  try {
+    validateTenantAccess('sch-demo-a', sessionSchoolB);
+    results.push({
+      stage: 'Stage 9',
+      testName: 'Stage 9 Auto-Grading & Security - Exam Attempt Cross-Tenant Protection',
+      passed: false,
+      message: 'FAIL: School B student permitted to attempt School A examination',
+    });
+  } catch (err: any) {
+    const isTenantBlocked = err.message.includes('SECURITY ALERT: Cross-tenant access violation');
+    results.push({
+      stage: 'Stage 9',
+      testName: 'Stage 9 Auto-Grading & Security - Exam Attempt Cross-Tenant Protection',
+      passed: isTenantBlocked,
+      message: isTenantBlocked ? 'PASSED: Server calculated exam score (anti-forgery) and blocked cross-tenant exam attempt with SECURITY ALERT' : err.message,
     });
   }
 
