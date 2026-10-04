@@ -27,6 +27,12 @@ All implementation steps strictly reused the existing project stack (Next.js 16,
 - **Personal Attendance View**: `/student` portal displaying student personal attendance summary and history.
 - **Self-Access Isolation**: Enforces student access boundary strictly to own authenticated user session (`session.userId === studentId`).
 
+### 5. Authentication & Google OAuth Provider Integration
+- **Canonical Authentication**: Integrated Supabase Auth as canonical identity management layer via `supabase.auth.signInWithOAuth({ provider: 'google' })`.
+- **Identity Separation**: Google handles identity ("Who is this person?"), Supabase Auth manages sessions, and EDNOVA database resolves tenant (`school_id`) and role permissions.
+- **Unauthorized Account Defense**: Unregistered or unassigned Google accounts attempting login receive an explicit access-denied state ("No active EDNOVA institutional membership found for this Google account").
+- **Login UI Update**: Updated `/login` page with a prominent "Continue with Google" button alongside canonical email/password access.
+
 ---
 
 ## 3. Reused Existing Functionality

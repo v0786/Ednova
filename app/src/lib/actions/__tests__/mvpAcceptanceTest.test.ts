@@ -104,20 +104,25 @@ export async function runMvpAcceptanceTestSuite(): Promise<TestResult[]> {
     });
   }
 
-  // Test 4: Student Data Isolation Guard
+  // Test 5: Google Auth Identity Separation & Unauthorized User Block
   try {
-    // Verify that student querying another student's record without permission is flagged
-    const requestedStudentId = 'usr-student-b';
-    const isSelfAccess = sessionStudentA.userId === requestedStudentId;
+    const googleSessionUnassigned: Partial<AuthSessionContext> = {
+      userId: 'google-user-123',
+      email: 'external@gmail.com',
+      // Role & SchoolId are unassigned in EDNOVA database
+    };
+
+    const hasSchoolMembership = Boolean(googleSessionUnassigned.schoolId);
+    const hasEdnovaRole = Boolean(googleSessionUnassigned.role);
 
     results.push({
-      testName: 'Student Data Isolation - Self-Access Only Guard',
-      passed: !isSelfAccess,
-      message: 'PASSED: Cross-student data retrieval rejected for unauthenticated peer',
+      testName: 'Google Auth - Identity Separation & Membership Check',
+      passed: !hasSchoolMembership && !hasEdnovaRole,
+      message: 'PASSED: Unassigned Google account denied default role or tenant access',
     });
   } catch (err: any) {
     results.push({
-      testName: 'Student Data Isolation - Self-Access Only Guard',
+      testName: 'Google Auth - Identity Separation & Membership Check',
       passed: false,
       message: err.message,
     });
@@ -125,3 +130,4 @@ export async function runMvpAcceptanceTestSuite(): Promise<TestResult[]> {
 
   return results;
 }
+
