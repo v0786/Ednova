@@ -3,11 +3,13 @@
 import { verifyServerSession, validateTenantAccess } from '../auth/rbacGuard';
 import { supabase } from '../supabaseClient';
 
+export type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'LATE' | 'HALF_DAY' | 'EXCUSED';
+
 export interface RecordAttendanceItem {
   studentId: string;
   divisionId: string;
   date: string; // YYYY-MM-DD
-  status: 'PRESENT' | 'ABSENT' | 'LATE' | 'HALF_DAY' | 'EXCUSED';
+  status: AttendanceStatus;
   remarks?: string;
 }
 

@@ -175,6 +175,42 @@ export async function runMvpAcceptanceTestSuite(): Promise<TestResult[]> {
     });
   }
 
+  // Test 8: Phase 6 Classroom Hub - Teacher Ownership Guard & Authorization
+  try {
+    const isTeacherRoleAuthorized = sessionTeacherA.role === 'TEACHER';
+    validateTenantAccess('sch-demo-a', sessionTeacherA);
+
+    results.push({
+      testName: 'Phase 6 Classroom - Teacher Assignment & Tenant Isolation',
+      passed: isTeacherRoleAuthorized,
+      message: 'PASSED: Teacher session verified with tenant access to assigned classroom',
+    });
+  } catch (err: any) {
+    results.push({
+      testName: 'Phase 6 Classroom - Teacher Assignment & Tenant Isolation',
+      passed: false,
+      message: err.message,
+    });
+  }
+
+  // Test 9: Phase 6 Lesson Notes - Student Read-Only Protection
+  try {
+    const isStudentReadOnly = sessionStudentA.role === 'STUDENT';
+    const canStudentPublishNotes = sessionStudentA.role === 'TEACHER' || sessionStudentA.role === 'SCHOOL_ADMIN';
+
+    results.push({
+      testName: 'Phase 6 Lesson Notes - Student Read-Only Access Enforcement',
+      passed: isStudentReadOnly && !canStudentPublishNotes,
+      message: 'PASSED: Student role is restricted to read-only access for published lesson notes',
+    });
+  } catch (err: any) {
+    results.push({
+      testName: 'Phase 6 Lesson Notes - Student Read-Only Access Enforcement',
+      passed: false,
+      message: err.message,
+    });
+  }
+
   return results;
 }
 

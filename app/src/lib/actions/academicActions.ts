@@ -247,3 +247,30 @@ export async function publishTodaysNote(input: PublishTodaysNoteInput) {
   return { success: true, data };
 }
 
+export async function getTodaysNotes(
+  schoolId: string,
+  divisionId?: string,
+  subjectId?: string,
+  date?: string
+) {
+  const session = await verifyServerSession();
+  validateTenantAccess(schoolId, session);
+
+  let query = supabase
+    .from('todays_notes')
+    .select('*')
+    .eq('school_id', schoolId);
+
+  if (divisionId) query = query.eq('division_id', divisionId);
+  if (subjectId) query = query.eq('subject_id', subjectId);
+  if (date) query = query.eq('date', date);
+
+  const { data, error } = await query.order('created_at', { ascending: false });
+
+  if (error) {
+    return { success: false, error: error.message, data: [] };
+  }
+
+  return { success: true, data: data || [] };
+}
+
