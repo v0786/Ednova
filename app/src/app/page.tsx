@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { AnimatedGradient } from '@/components/ui/animated-gradient';
+import PathDrawingPortfolioHero from '@/components/ui/path-drawing-portfolio-hero';
 import { 
   CheckCircle2, 
   Clock, 
@@ -57,51 +58,47 @@ export default function LandingPage() {
           </a>
         </header>
 
-        {/* Hero Section */}
-        <main className="max-w-4xl mx-auto px-6 py-16 sm:py-24 text-center space-y-8 z-20">
-          {/* Status Badge */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-mono font-medium bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 backdrop-blur">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>BUILDING IN PUBLIC</span>
-          </div>
+        {/* Hero Section with Path Drawing Name Animation */}
+        <main className="max-w-5xl mx-auto px-6 py-8 text-center space-y-6 z-20 flex flex-col items-center">
+          <PathDrawingPortfolioHero
+            brand="EDNOVA"
+            eyebrow="● BUILDING IN PUBLIC"
+            tagline="Digital Operating System for Schools"
+            fromColor="#818cf8"
+            toColor="#c084fc"
+            className="min-h-[320px] py-4"
+          >
+            <div className="space-y-6 max-w-2xl mx-auto -mt-12">
+              <p className="text-sm sm:text-base md:text-lg text-slate-300 leading-relaxed font-normal">
+                One connected platform for the academic and operational life of a school.
+              </p>
 
-          <div className="space-y-4">
-            <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-white leading-none">
-              EDNOVA
-            </h1>
-            <p className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-indigo-300 via-slate-200 to-indigo-400 bg-clip-text text-transparent">
-              Digital Operating System for Schools
-            </p>
-          </div>
+              <p className="text-xs sm:text-sm text-slate-400 font-mono leading-relaxed">
+                EDNOVA is being built phase by phase — with the foundation, authentication, academic structure, attendance, teacher workflows and mobile architecture already taking shape.
+              </p>
 
-          <p className="text-sm sm:text-base md:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed font-normal">
-            One connected platform for the academic and operational life of a school.
-          </p>
+              {/* Primary CTA Buttons */}
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+                <button
+                  onClick={scrollToProgress}
+                  className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 font-bold text-white shadow-xl shadow-indigo-600/30 transition text-sm flex items-center justify-center gap-2 touch-target"
+                >
+                  <span>Explore the Build</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
 
-          <p className="text-xs sm:text-sm text-slate-400 max-w-2xl mx-auto font-mono leading-relaxed">
-            EDNOVA is being built phase by phase — with the foundation, authentication, academic structure, attendance, teacher workflows and mobile architecture already taking shape.
-          </p>
-
-          {/* Primary CTA Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-            <button
-              onClick={scrollToProgress}
-              className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 font-bold text-white shadow-xl shadow-indigo-600/30 transition text-sm flex items-center justify-center gap-2 touch-target"
-            >
-              <span>Explore the Build</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-
-            <a
-              href={EDNOVA_APP_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-800 font-semibold text-slate-200 transition text-sm flex items-center justify-center gap-2 backdrop-blur touch-target"
-            >
-              <span>Open EDNOVA App</span>
-              <ExternalLink className="w-4 h-4 text-indigo-400" />
-            </a>
-          </div>
+                <a
+                  href={EDNOVA_APP_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-800 font-semibold text-slate-200 transition text-sm flex items-center justify-center gap-2 backdrop-blur touch-target"
+                >
+                  <span>Open EDNOVA App</span>
+                  <ExternalLink className="w-4 h-4 text-indigo-400" />
+                </a>
+              </div>
+            </div>
+          </PathDrawingPortfolioHero>
         </main>
 
         <div className="pb-8 text-center z-20">
