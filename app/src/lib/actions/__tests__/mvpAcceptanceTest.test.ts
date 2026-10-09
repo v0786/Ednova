@@ -60,7 +60,7 @@ import { getSchoolFeeInvoices, recordFeePayment } from '../feeActions';
 import { getLibraryBooks, issueLibraryBook } from '../libraryActions';
 import { getTransportRoutes } from '../transportActions';
 import { generateOfficialCertificate } from '../certificateActions';
-import { requestAIIntelligenceAssistance } from '../aiIntelligenceActions';
+import { generateAIIntelligenceAssistance } from '../../ai/intelligence';
 
 export interface TestResult {
   stage: string;
@@ -873,7 +873,13 @@ export async function runMvpAcceptanceTestSuite(): Promise<TestResult[]> {
   // ==========================================
   try {
     validateTenantAccess('sch-demo-a', sessionTeacherA);
-    const resAI = await requestAIIntelligenceAssistance('sch-demo-a', 'TEACHER_LESSON_PLAN', 'Newton Laws of Motion', sessionTeacherA);
+    const resAI = await generateAIIntelligenceAssistance(
+      'sch-demo-a',
+      'TEACHER_LESSON_PLAN',
+      'Newton Laws of Motion',
+      sessionTeacherA,
+      async () => 'Test lesson-plan assistance.'
+    );
 
     results.push({
       stage: 'Phase C',
@@ -937,4 +943,3 @@ if (typeof require !== 'undefined' && require.main === module) {
     if (passCount !== results.length) process.exit(1);
   });
 }
-

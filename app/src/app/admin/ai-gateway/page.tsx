@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Bot, Sparkles, ShieldCheck, Database, Search, AlertCircle, FileText, CheckCircle2 } from 'lucide-react';
+import { Bot, Sparkles, ShieldCheck, Database, AlertCircle } from 'lucide-react';
+import { queryPermissionAwareAIGateway } from '@/lib/actions/aiGatewayActions';
 
 interface AIResult {
   summary: string;
@@ -13,25 +14,23 @@ export default function AIGatewayPage() {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AIResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleQuerySubmit = (e: React.FormEvent) => {
+  const handleQuerySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!query) return;
+    if (!query.trim()) return;
 
     setLoading(true);
-    // Simulate AI Gateway RAG Execution with inherited session scope
-    setTimeout(() => {
-      setResult({
-        summary: `AI Assistant Insight: Analyzed operational records. Identified 2 open security incidents near campus gates and 1 pending facility feedback regarding Science Lab equipment.`,
-        retrievedIncidents: [
-          { id: '1', title: 'Unauthorized perimeter check', category: 'SECURITY', severity: 'HIGH', status: 'INVESTIGATING' },
-        ],
-        retrievedFeedback: [
-          { id: '101', category: 'FACILITY_ISSUE', subject: 'Lab 03 Equipment Replacement', status: 'ASSIGNED' },
-        ],
-      });
+    setError(null);
+    setResult(null);
+    try {
+      const response = await queryPermissionAwareAIGateway({ userQuery: query });
+      setResult(response.data);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'The AI gateway request failed.');
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -45,12 +44,12 @@ export default function AIGatewayPage() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-white">AI Operational Intelligence Gateway</h1>
-              <p className="text-sm text-slate-400">Permission-aware context retrieval, prompt injection defense, and incident summaries.</p>
+              <p className="text-sm text-slate-400">Tenant-scoped context retrieval and AI-generated operational summaries.</p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 text-xs font-mono text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded border border-emerald-500/20">
-            <ShieldCheck className="w-4 h-4" /> RLS Context Active
+            <ShieldCheck className="w-4 h-4" /> Tenant Context Active
           </div>
         </div>
 
@@ -73,7 +72,7 @@ export default function AIGatewayPage() {
             </div>
 
             <div className="flex justify-between items-center text-xs text-slate-400 font-mono">
-              <span>Untrusted boundary protection: Active</span>
+              <span>Question treated as untrusted input</span>
               <button
                 type="submit"
                 disabled={loading}
@@ -83,6 +82,11 @@ export default function AIGatewayPage() {
               </button>
             </div>
           </form>
+          {error && (
+            <p role="alert" className="flex items-center gap-2 text-sm text-rose-400">
+              <AlertCircle className="w-4 h-4" /> {error}
+            </p>
+          )}
         </div>
 
         {/* AI Insight Results & Evidence Lineage */}
@@ -91,7 +95,7 @@ export default function AIGatewayPage() {
             <div className="p-4 bg-indigo-950/40 border border-indigo-500/30 rounded-lg text-indigo-200 text-sm leading-relaxed space-y-2">
               <div className="flex items-center justify-between font-mono text-xs text-indigo-400 font-bold border-b border-indigo-500/20 pb-2">
                 <span>AI ASSISTANT GENERATED SUMMARY</span>
-                <span className="bg-indigo-500/20 px-2 py-0.5 rounded text-indigo-300">TRACED TO SOURCE FACTS</span>
+                <span className="bg-indigo-500/20 px-2 py-0.5 rounded text-indigo-300">CONTEXT INCLUDED</span>
               </div>
               <p>{result.summary}</p>
             </div>
@@ -99,7 +103,7 @@ export default function AIGatewayPage() {
             {/* Traceability Lineage */}
             <div className="space-y-3">
               <h3 className="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                <Database className="w-4 h-4 text-indigo-400" /> Underlying Record Lineage (RLS Verified)
+                <Database className="w-4 h-4 text-indigo-400" /> Tenant-scoped source records
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">

@@ -1,82 +1,173 @@
 'use client';
 
-import React, { useState } from 'react';
-import { UserCheck, CheckCircle2, XCircle, Clock, Save, ShieldCheck, AlertCircle } from 'lucide-react';
-import { submitAttendanceRoster } from '@/lib/actions/attendanceActions';
+import React, { useEffect, useMemo, useState } from 'react';
+import { AlertCircle, CalendarClock, CheckCircle2, Clock3, Save, ShieldCheck, UserCheck } from 'lucide-react';
+import {
+  getAttendanceSummary,
+  getAttendanceRoster,
+  getTeacherAssignments,
+  submitAttendanceRoster,
+  type AttendanceStatus,
+} from '@/lib/actions/attendanceActions';
 
-interface RosterStudent {
+const DEFAULT_SCHOOL_ID = 'SCH-DEMO-001';
+
+interface AttendanceAssignment {
   id: string;
-  rollNumber: string;
-  name: string;
-  status: 'PRESENT' | 'ABSENT' | 'LATE' | 'HALF_DAY' | 'EXCUSED';
+  divisionId: string;
+  divisionName: string;
+  gradeName: string;
+  academicYearName: string;
+  subjectName: string;
 }
 
-const INITIAL_ROSTER: RosterStudent[] = [
-  { id: '1', rollNumber: '701', name: 'Alex Rivera', status: 'PRESENT' },
-  { id: '2', rollNumber: '702', name: 'Sophia Chen', status: 'PRESENT' },
-  { id: '3', rollNumber: '703', name: 'Liam Vance', status: 'ABSENT' },
-  { id: '4', rollNumber: '704', name: 'Maya Lin', status: 'LATE' },
-  { id: '5', rollNumber: '705', name: 'Noah Miller', status: 'PRESENT' },
-];
+interface AttendanceRosterStudent {
+  id: string;
+  studentId: string;
+  fullName: string;
+  rollNumber: string;
+  status: AttendanceStatus;
+  remarks: string | null;
+  isRecorded: boolean;
+}
+
+const STATUS_OPTIONS: AttendanceStatus[] = ['PRESENT', 'ABSENT', 'LATE', 'HALF_DAY', 'EXCUSED'];
+
+const STATUS_CONFIG: Record<AttendanceStatus, { label: string; activeClass: string }> = {
+  PRESENT: { label: '✓ Present', activeClass: 'bg-emerald-600 text-white border-emerald-500 font-bold shadow-md shadow-emerald-600/30' },
+  ABSENT: { label: '✕ Absent', activeClass: 'bg-rose-600 text-white border-rose-500 font-bold shadow-md shadow-rose-600/30' },
+  LATE: { label: '⚠ Late', activeClass: 'bg-amber-600 text-white border-amber-500 font-bold shadow-md shadow-amber-600/30' },
+  HALF_DAY: { label: '½ Day', activeClass: 'bg-indigo-600 text-white border-indigo-500 font-bold shadow-md shadow-indigo-600/30' },
+  EXCUSED: { label: 'ℹ Excused', activeClass: 'bg-purple-600 text-white border-purple-500 font-bold shadow-md shadow-purple-600/30' },
+};
 
 export default function AttendancePage() {
-  const [roster, setRoster] = useState<RosterStudent[]>(INITIAL_ROSTER);
-  const [selectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [assignments, setAssignments] = useState<AttendanceAssignment[]>([]);
+  const [selectedDivisionId, setSelectedDivisionId] = useState('');
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [roster, setRoster] = useState<AttendanceRosterStudent[]>([]);
+  const [summary, setSummary] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
 
-  const handleStatusChange = (id: string, status: RosterStudent['status']) => {
-    setRoster(roster.map(s => s.id === id ? { ...s, status } : s));
+  const selectedAssignment = useMemo(
+    () => assignments.find((assignment) => assignment.divisionId === selectedDivisionId) || null,
+    [assignments, selectedDivisionId]
+  );
+
+  useEffect(() => {
+    const loadAssignments = async () => {
+      try {
+        const response = await getTeacherAssignments(DEFAULT_SCHOOL_ID);
+        if (!response.success) {
+          setErrorMsg(response.error || 'Unable to load assigned divisions.');
+          return;
+        }
+        const nextAssignments = (response.data || []) as AttendanceAssignment[];
+        setAssignments(nextAssignments);
+        if (nextAssignments.length > 0) {
+          setSelectedDivisionId(nextAssignments[0].divisionId);
+        }
+      } catch (err: any) {
+        setErrorMsg(err?.message || 'Unable to load teacher assignments.');
+      }
+    };
+
+    void loadAssignments();
+  }, []);
+
+  useEffect(() => {
+    const loadRoster = async () => {
+      if (!selectedDivisionId) {
+        setRoster([]);
+        setSummary(null);
+        return;
+      }
+
+      setLoading(true);
+      setErrorMsg('');
+
+      try {
+        const [rosterResponse, summaryResponse] = await Promise.all([
+          getAttendanceRoster(DEFAULT_SCHOOL_ID, selectedDivisionId, selectedDate),
+          getAttendanceSummary(DEFAULT_SCHOOL_ID, selectedDivisionId, selectedDate),
+        ]);
+
+        if (!rosterResponse.success) {
+          setErrorMsg(rosterResponse.error || 'Unable to load class roster.');
+          setRoster([]);
+        } else {
+          setRoster((rosterResponse.data || []) as AttendanceRosterStudent[]);
+        }
+
+        if (summaryResponse.success) {
+          setSummary(summaryResponse.data);
+        }
+      } catch (err: any) {
+        setErrorMsg(err?.message || 'Unable to load attendance data.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadRoster();
+  }, [selectedDivisionId, selectedDate]);
+
+  const handleStatusChange = (studentId: string, status: AttendanceStatus) => {
+    setRoster((current) =>
+      current.map((student) =>
+        student.studentId === studentId ? { ...student, status } : student
+      )
+    );
   };
 
   const markAllPresent = () => {
-    setRoster(roster.map(s => ({ ...s, status: 'PRESENT' })));
+    setRoster((current) => current.map((student) => ({ ...student, status: 'PRESENT' })));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!selectedDivisionId || roster.length === 0) return;
+
+    setSubmitting(true);
     setErrorMsg('');
+    setSuccessMsg('');
 
     try {
-      const res = await submitAttendanceRoster({
-        schoolId: 'sch-001',
-        divisionId: 'div-7a',
+      const result = await submitAttendanceRoster({
+        schoolId: DEFAULT_SCHOOL_ID,
+        divisionId: selectedDivisionId,
         date: selectedDate,
-        items: roster.map(s => ({
-          studentId: s.id,
-          divisionId: 'div-7a',
+        items: roster.map((student) => ({
+          studentId: student.studentId,
+          divisionId: selectedDivisionId,
           date: selectedDate,
-          status: s.status,
+          status: student.status,
+          remarks: student.remarks ?? undefined,
         })),
       });
 
-      if (res && res.success) {
-        setSubmitted(true);
-      } else {
-        // Fallback for demo mode if session is unauthenticated in preview
-        setSubmitted(true);
+      if (!result.success) {
+        setErrorMsg(result.error || 'Attendance could not be saved.');
+        return;
+      }
+
+      setSuccessMsg(`Saved attendance for ${result.count ?? roster.length} students.`);
+      const refreshedSummary = await getAttendanceSummary(DEFAULT_SCHOOL_ID, selectedDivisionId, selectedDate);
+      if (refreshedSummary.success) {
+        setSummary(refreshedSummary.data);
       }
     } catch (err: any) {
-      // Graceful fallback for UI demonstration while preserving server action path
-      setSubmitted(true);
+      setErrorMsg(err?.message || 'Unable to save attendance.');
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
-  const STATUS_CONFIG: Record<RosterStudent['status'], { label: string; activeClass: string }> = {
-    PRESENT: { label: '✓ Present', activeClass: 'bg-emerald-600 text-white border-emerald-500 font-bold shadow-md shadow-emerald-600/30' },
-    ABSENT: { label: '✕ Absent', activeClass: 'bg-rose-600 text-white border-rose-500 font-bold shadow-md shadow-rose-600/30' },
-    LATE: { label: '⚠ Late', activeClass: 'bg-amber-600 text-white border-amber-500 font-bold shadow-md shadow-amber-600/30' },
-    HALF_DAY: { label: '½ Day', activeClass: 'bg-indigo-600 text-white border-indigo-500 font-bold shadow-md shadow-indigo-600/30' },
-    EXCUSED: { label: 'ℹ Excused', activeClass: 'bg-purple-600 text-white border-purple-500 font-bold shadow-md shadow-purple-600/30' },
-  };
-
   return (
-    <div className="space-y-6 font-sans max-w-5xl mx-auto">
-      {/* Header */}
+    <div className="space-y-6 font-sans max-w-6xl mx-auto">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-4 sm:p-6 rounded-2xl shadow-2xl">
         <div className="flex items-center gap-3">
           <div className="p-3 rounded-xl bg-indigo-600/20 text-indigo-400 shrink-0">
@@ -84,128 +175,158 @@ export default function AttendancePage() {
           </div>
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Daily Attendance Marking</h1>
-            <p className="text-xs sm:text-sm text-slate-400">Fast roster entry, quick mark-all, and audit history.</p>
+            <p className="text-xs sm:text-sm text-slate-400">Teacher roster entry with filtered class view and saved attendance summaries.</p>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
-          <span className="text-xs font-mono bg-slate-950 px-3 py-2.5 rounded-xl border border-slate-800 text-slate-300">
-            Date: {selectedDate}
-          </span>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(event) => setSelectedDate(event.target.value)}
+            className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 outline-none"
+          />
           <button
             type="button"
             onClick={markAllPresent}
-            className="flex-1 sm:flex-initial px-4 py-2.5 text-xs font-bold rounded-xl bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-600/30 transition touch-target flex items-center justify-center gap-1.5"
+            className="flex-1 sm:flex-initial px-4 py-2.5 text-xs font-bold rounded-xl bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-600/30 transition"
           >
-            <CheckCircle2 className="w-4 h-4" /> Mark All Present
+            <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4" /> Mark All Present</span>
           </button>
         </div>
       </div>
 
-      {submitted && (
-        <div className="p-4 bg-emerald-950/40 border border-emerald-500/30 rounded-2xl flex items-center gap-3 text-emerald-300">
-          <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-          <span className="text-sm font-medium">Daily roster attendance submitted and locked with server audit log.</span>
+      {errorMsg && (
+        <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-300 text-xs flex items-center gap-2.5">
+          <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+          <span className="font-medium">{errorMsg}</span>
         </div>
       )}
 
-      {/* Attendance Roster */}
+      {successMsg && (
+        <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-300 text-xs flex items-center gap-2.5">
+          <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+          <span className="font-medium">{successMsg}</span>
+        </div>
+      )}
+
+      {summary && (
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+            <p className="text-xs text-slate-400">Eligible</p>
+            <p className="mt-2 text-2xl font-bold text-white">{summary.eligibleCount}</p>
+          </div>
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+            <p className="text-xs text-slate-400">Present</p>
+            <p className="mt-2 text-2xl font-bold text-emerald-400">{summary.present}</p>
+          </div>
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+            <p className="text-xs text-slate-400">Absent</p>
+            <p className="mt-2 text-2xl font-bold text-rose-400">{summary.absent}</p>
+          </div>
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+            <p className="text-xs text-slate-400">Late</p>
+            <p className="mt-2 text-2xl font-bold text-amber-400">{summary.late}</p>
+          </div>
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+            <p className="text-xs text-slate-400">Rate</p>
+            <p className="mt-2 text-2xl font-bold text-indigo-400">{summary.attendancePercentage}%</p>
+          </div>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
-        <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/40">
-          <span className="font-bold text-white text-sm">Class Roster: Grade 7 - Section A</span>
-          <span className="text-xs font-mono text-slate-400">Total Students: {roster.length}</span>
+        <div className="p-4 border-b border-slate-800 flex flex-col md:flex-row md:items-center md:justify-between gap-3 bg-slate-950/40">
+          <div className="flex items-center gap-3">
+            <CalendarClock className="w-5 h-5 text-indigo-400" />
+            <span className="font-bold text-white text-sm">
+              {selectedAssignment ? `${selectedAssignment.gradeName} / ${selectedAssignment.divisionName}` : 'Attendance roster'}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <label className="text-xs text-slate-400">Division</label>
+            <select
+              value={selectedDivisionId}
+              onChange={(event) => setSelectedDivisionId(event.target.value)}
+              className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 outline-none"
+            >
+              {assignments.length === 0 ? (
+                <option value="">No assigned divisions</option>
+              ) : (
+                assignments.map((assignment) => (
+                  <option key={assignment.divisionId} value={assignment.divisionId}>
+                    {assignment.gradeName} • {assignment.divisionName}
+                  </option>
+                ))
+              )}
+            </select>
+          </div>
         </div>
 
-        {/* Mobile View Roster Cards */}
-        <div className="block md:hidden divide-y divide-slate-800/80">
-          {roster.map((student) => (
-            <div key={student.id} className="p-4 space-y-3 bg-slate-900">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-mono font-bold text-indigo-400 px-2.5 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20">
-                  Roll #{student.rollNumber}
-                </span>
-                <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold border ${STATUS_CONFIG[student.status].activeClass}`}>
-                  {STATUS_CONFIG[student.status].label}
-                </span>
-              </div>
-              <h3 className="font-bold text-white text-base">{student.name}</h3>
-
-              {/* Touch friendly toggle button grid */}
-              <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5 pt-1">
-                {(['PRESENT', 'ABSENT', 'LATE', 'HALF_DAY', 'EXCUSED'] as const).map((st) => {
-                  const isSelected = student.status === st;
-                  return (
-                    <button
-                      key={st}
-                      type="button"
-                      onClick={() => handleStatusChange(student.id, st)}
-                      className={`min-h-[44px] py-2 px-1 text-xs font-semibold rounded-xl border transition touch-target flex items-center justify-center text-center ${
-                        isSelected 
-                          ? STATUS_CONFIG[st].activeClass 
-                          : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-200'
-                      }`}
-                    >
-                      {STATUS_CONFIG[st].label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Desktop View Table */}
-        <div className="hidden md:block overflow-x-auto responsive-table-container">
-          <table className="w-full text-left text-sm text-slate-300">
-            <thead className="bg-slate-950/60 text-slate-400 uppercase text-xs border-b border-slate-800 font-mono">
-              <tr>
-                <th className="px-6 py-3.5">Roll</th>
-                <th className="px-6 py-3.5">Student Name</th>
-                <th className="px-6 py-3.5">Attendance Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/60">
-              {roster.map((student) => (
-                <tr key={student.id} className="hover:bg-slate-800/40 transition">
-                  <td className="px-6 py-4 font-mono text-indigo-400 font-bold">{student.rollNumber}</td>
-                  <td className="px-6 py-4 font-bold text-white">{student.name}</td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      {(['PRESENT', 'ABSENT', 'LATE', 'HALF_DAY', 'EXCUSED'] as const).map((st) => {
-                        const isSelected = student.status === st;
-                        return (
-                          <button
-                            key={st}
-                            type="button"
-                            onClick={() => handleStatusChange(student.id, st)}
-                            className={`min-h-[40px] px-3 py-1.5 text-xs font-semibold rounded-lg border transition ${
-                              isSelected 
-                                ? STATUS_CONFIG[st].activeClass 
-                                : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-200'
-                            }`}
-                          >
-                            {STATUS_CONFIG[st].label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </td>
+        {loading ? (
+          <div className="p-8 text-center text-slate-400 text-xs font-mono">Loading roster data...</div>
+        ) : roster.length === 0 ? (
+          <div className="p-8 text-center text-slate-500 text-xs font-mono border-dashed border-slate-800 border-2 m-4 rounded-2xl">
+            No students are enrolled in the selected division for this date.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm text-slate-300">
+              <thead className="bg-slate-950/60 text-slate-400 uppercase text-xs border-b border-slate-800 font-mono">
+                <tr>
+                  <th className="px-6 py-3.5">Roll</th>
+                  <th className="px-6 py-3.5">Student Name</th>
+                  <th className="px-6 py-3.5">Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-slate-800/60">
+                {roster.map((student) => (
+                  <tr key={student.studentId} className="hover:bg-slate-800/40 transition">
+                    <td className="px-6 py-4 font-mono text-indigo-400 font-bold">{student.rollNumber}</td>
+                    <td className="px-6 py-4 font-bold text-white">{student.fullName}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-wrap gap-2">
+                        {STATUS_OPTIONS.map((status) => {
+                          const isSelected = student.status === status;
+                          return (
+                            <button
+                              key={status}
+                              type="button"
+                              onClick={() => handleStatusChange(student.studentId, status)}
+                              className={`px-3 py-2 text-[11px] font-bold rounded-xl border transition ${
+                                isSelected ? STATUS_CONFIG[status].activeClass : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-200'
+                              }`}
+                            >
+                              {STATUS_CONFIG[status].label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
-        <div className="p-4 bg-slate-950 border-t border-slate-800 flex justify-end">
+        <div className="p-4 border-t border-slate-800 flex flex-col sm:flex-row justify-between gap-3 bg-slate-950/40">
+          <div className="flex items-center gap-2 text-xs font-mono text-slate-400">
+            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            Tenant-scoped attendance workflow
+          </div>
+
           <button
             type="submit"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-6 py-3 rounded-xl shadow-lg shadow-indigo-600/30 transition text-sm touch-target"
+            disabled={submitting || !selectedDivisionId || roster.length === 0}
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-bold shadow-lg shadow-indigo-600/30 hover:bg-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed transition"
           >
-            <Save className="w-4 h-4" /> Save Roster Attendance
+            {submitting ? <Clock3 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            {submitting ? 'Saving...' : 'Save Daily Attendance'}
           </button>
         </div>
       </form>
     </div>
   );
 }
-

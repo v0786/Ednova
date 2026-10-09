@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import AppShell from '@/components/AppShell';
 import { Calendar, Clock, BookOpen, User, ShieldCheck } from 'lucide-react';
-import { getStudentSchedule } from '@/lib/actions/timetableActions';
+import { getCurrentStudentTimetableData, TimetableEntry } from '@/lib/actions/timetableActions';
 
 const DAYS = [
   { id: 1, name: 'Monday' },
@@ -25,16 +25,25 @@ const PERIOD_TIMES = [
 
 export default function StudentTimetablePage() {
   const [selectedDay, setSelectedDay] = useState(1);
-  const [entries, setEntries] = useState<any[]>([]);
+  const [entries, setEntries] = useState<TimetableEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [schoolContext, setSchoolContext] = useState<{ schoolId: string; academicYearName?: string; divisionName?: string }>({ schoolId: '' });
 
   useEffect(() => {
     async function loadSchedule() {
       setLoading(true);
       try {
-        const res = await getStudentSchedule('SCH-DEMO-001', 'ay-2026', 'div-7a');
+        const res = await getCurrentStudentTimetableData();
         if (res.success && res.data) {
           setEntries(res.data);
+          setSchoolContext({
+            schoolId: res.schoolId,
+            academicYearName: res.academicYearName,
+            divisionName: res.divisionName,
+          });
+        } else {
+          setEntries([]);
+          console.error('Failed to load student timetable:', res.error);
         }
       } catch (err) {
         console.error('Failed to load student timetable:', err);
@@ -58,7 +67,7 @@ export default function StudentTimetablePage() {
             </div>
             <div>
               <h1 className="text-xl font-bold text-white">Student Weekly Timetable</h1>
-              <p className="text-xs text-slate-400 font-mono">Grade 7 - Section A | Academic Year 2026–2027</p>
+              <p className="text-xs text-slate-400 font-mono">{schoolContext.divisionName || 'Current division'} | {schoolContext.academicYearName || 'Current academic year'}</p>
             </div>
           </div>
           <span className="text-xs font-mono text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20 flex items-center gap-1.5">

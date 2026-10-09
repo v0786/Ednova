@@ -21,6 +21,7 @@ import {
   updateTimetableEntry,
   deleteTimetableEntry,
   getTimetableEntries,
+  getCurrentSchoolTimetableContext,
   TimetableEntry,
 } from '@/lib/actions/timetableActions';
 
@@ -44,93 +45,84 @@ const PERIOD_TIMES: Record<number, { start: string; end: string }> = {
   8: { start: '15:00', end: '15:45' },
 };
 
-const MOCK_DIVISIONS = [
-  { id: 'div-7a', name: 'Grade 7 - Section A' },
-  { id: 'div-8a', name: 'Grade 8 - Section A' },
-  { id: 'div-9b', name: 'Grade 9 - Section B' },
-];
-
-const MOCK_SUBJECTS = [
-  { id: 'sub-math', name: 'Mathematics' },
-  { id: 'sub-phy', name: 'Physics' },
-  { id: 'sub-chem', name: 'Chemistry' },
-  { id: 'sub-eng', name: 'English Literature' },
-  { id: 'sub-bio', name: 'Biology' },
-  { id: 'sub-hist', name: 'History' },
-];
-
-const MOCK_TEACHERS = [
-  { id: 't-101', name: 'Dr. Sarah Connor' },
-  { id: 't-102', name: 'Prof. Alan Grant' },
-  { id: 't-103', name: 'Ms. Clara Oswald' },
-  { id: 't-104', name: 'Dr. Henry Wu' },
-];
-
 export default function AdminTimetablePage() {
-  const [schoolId] = useState('SCH-DEMO-001');
-  const [academicYearId, setAcademicYearId] = useState('AY-2025-2026');
-  const [selectedDivisionId, setSelectedDivisionId] = useState('div-7a');
-  const [selectedDay, setSelectedDay] = useState(1); // 1 = Mon
+  const [schoolId, setSchoolId] = useState('');
+  const [academicYearId, setAcademicYearId] = useState('');
+  const [selectedDivisionId, setSelectedDivisionId] = useState('');
+  const [selectedDay, setSelectedDay] = useState(1);
+  const [academicYears, setAcademicYears] = useState<Array<{ id: string; name: string }>>([]);
+  const [divisions, setDivisions] = useState<Array<{ id: string; name: string }>>([]);
+  const [subjects, setSubjects] = useState<Array<{ id: string; name: string }>>([]);
+  const [teachers, setTeachers] = useState<Array<{ id: string; full_name: string }>>([]);
 
   const [entries, setEntries] = useState<TimetableEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<TimetableEntry | null>(null);
   const [formSubmitting, setFormSubmitting] = useState(false);
 
-  // Form State
-  const [formDivisionId, setFormDivisionId] = useState('div-7a');
-  const [formSubjectId, setFormSubjectId] = useState('sub-math');
-  const [formTeacherId, setFormTeacherId] = useState('t-101');
+  const [formDivisionId, setFormDivisionId] = useState('');
+  const [formSubjectId, setFormSubjectId] = useState('');
+  const [formTeacherId, setFormTeacherId] = useState('');
   const [formDayOfWeek, setFormDayOfWeek] = useState(1);
   const [formPeriodNumber, setFormPeriodNumber] = useState(1);
-  const [formRoomNumber, setFormRoomNumber] = useState('Room 201');
+  const [formRoomNumber, setFormRoomNumber] = useState('');
 
   useEffect(() => {
+    const loadContext = async () => {
+      setLoading(true);
+      setErrorMsg(null);
+      try {
+        const res = await getCurrentSchoolTimetableContext();
+        if (!res.success || !res.data) {
+          throw new Error(res.error || 'Unable to load timetable context.');
+        }
+
+        const { schoolId: currentSchoolId, academicYears: currentAcademicYears, divisions: currentDivisions, subjects: currentSubjects, teachers: currentTeachers, activeAcademicYearId, defaultDivisionId } = res.data;
+
+        setSchoolId(currentSchoolId);
+        setAcademicYears(currentAcademicYears);
+        setDivisions(currentDivisions);
+        setSubjects(currentSubjects);
+        setTeachers(currentTeachers);
+        setAcademicYearId(activeAcademicYearId || currentAcademicYears[0]?.id || '');
+        setSelectedDivisionId(defaultDivisionId || currentDivisions[0]?.id || '');
+        setFormDivisionId(defaultDivisionId || currentDivisions[0]?.id || '');
+        setFormSubjectId(currentSubjects[0]?.id || '');
+        setFormTeacherId(currentTeachers[0]?.id || '');
+      } catch (err: any) {
+        setErrorMsg(err.message || 'Failed to initialize timetable context.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadContext();
+  }, []);
+
+  useEffect(() => {
+    if (!schoolId || !academicYearId || !selectedDivisionId) return;
     fetchEntries();
-  }, [academicYearId, selectedDivisionId]);
+  }, [schoolId, academicYearId, selectedDivisionId]);
 
   const fetchEntries = async () => {
+    if (!schoolId || !academicYearId || !selectedDivisionId) {
+      setEntries([]);
+      return;
+    }
+
     setLoading(true);
     setErrorMsg(null);
     try {
       const res = await getTimetableEntries(schoolId, academicYearId, selectedDivisionId);
-      if (res.success && res.data) {
-        setEntries(res.data);
+      if (res.success) {
+        setEntries(res.data || []);
       } else {
-        // Fallback to sample initialized data if DB table empty in mock mode
-        setEntries([
-          {
-            id: 'slot-1',
-            school_id: schoolId,
-            academic_year_id: academicYearId,
-            division_id: 'div-7a',
-            subject_id: 'sub-math',
-            teacher_id: 't-101',
-            day_of_week: 1,
-            period_number: 1,
-            start_time: '08:30',
-            end_time: '09:15',
-            room_number: 'Room 201',
-          },
-          {
-            id: 'slot-2',
-            school_id: schoolId,
-            academic_year_id: academicYearId,
-            division_id: 'div-7a',
-            subject_id: 'sub-phy',
-            teacher_id: 't-102',
-            day_of_week: 1,
-            period_number: 2,
-            start_time: '09:15',
-            end_time: '10:00',
-            room_number: 'Lab 03',
-          },
-        ]);
+        setEntries([]);
+        setErrorMsg(res.error || 'Failed to load timetable entries.');
       }
     } catch (err: any) {
       setErrorMsg(err.message || 'Failed to load timetable entries.');
@@ -140,13 +132,18 @@ export default function AdminTimetablePage() {
   };
 
   const handleOpenAddModal = (periodNum?: number) => {
+    if (!selectedDivisionId || !subjects.length || !teachers.length) {
+      setErrorMsg('Add at least one division, subject, and teacher before creating timetable slots.');
+      return;
+    }
+
     setEditingEntry(null);
     setFormDivisionId(selectedDivisionId);
-    setFormSubjectId(MOCK_SUBJECTS[0].id);
-    setFormTeacherId(MOCK_TEACHERS[0].id);
+    setFormSubjectId(subjects[0].id);
+    setFormTeacherId(teachers[0].id);
     setFormDayOfWeek(selectedDay);
     setFormPeriodNumber(periodNum || 1);
-    setFormRoomNumber('Room 101');
+    setFormRoomNumber('');
     setIsModalOpen(true);
   };
 
@@ -239,10 +236,13 @@ export default function AdminTimetablePage() {
   };
 
   const getSubjectName = (subId: string) =>
-    MOCK_SUBJECTS.find((s) => s.id === subId)?.name || 'Subject';
+    subjects.find((s) => s.id === subId)?.name || 'Subject';
 
   const getTeacherName = (teachId: string) =>
-    MOCK_TEACHERS.find((t) => t.id === teachId)?.name || 'Teacher';
+    teachers.find((t) => t.id === teachId)?.full_name || 'Teacher';
+
+  const getDivisionName = (divisionId: string) =>
+    divisions.find((d) => d.id === divisionId)?.name || 'Class';
 
   const currentDayEntries = entries.filter((e) => e.day_of_week === selectedDay);
 
@@ -303,9 +303,11 @@ export default function AdminTimetablePage() {
             value={academicYearId}
             onChange={(e) => setAcademicYearId(e.target.value)}
             className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 font-mono focus:ring-2 focus:ring-indigo-500/40"
+            disabled={!academicYears.length}
           >
-            <option value="AY-2025-2026">2025 – 2026 (Active)</option>
-            <option value="AY-2026-2027">2026 – 2027 (Upcoming)</option>
+            {academicYears.length ? academicYears.map((year) => (
+              <option key={year.id} value={year.id}>{year.name}</option>
+            )) : <option value="">No academic years available</option>}
           </select>
         </div>
 
@@ -317,12 +319,11 @@ export default function AdminTimetablePage() {
             value={selectedDivisionId}
             onChange={(e) => setSelectedDivisionId(e.target.value)}
             className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 font-mono focus:ring-2 focus:ring-indigo-500/40"
+            disabled={!divisions.length}
           >
-            {MOCK_DIVISIONS.map((div) => (
-              <option key={div.id} value={div.id}>
-                {div.name}
-              </option>
-            ))}
+            {divisions.length ? divisions.map((div) => (
+              <option key={div.id} value={div.id}>{div.name}</option>
+            )) : <option value="">No divisions available</option>}
           </select>
         </div>
 
@@ -330,7 +331,7 @@ export default function AdminTimetablePage() {
           <div className="w-full text-xs font-mono text-indigo-400 bg-indigo-500/10 px-3 py-2.5 rounded-xl border border-indigo-500/20 flex items-center justify-between">
             <span>Showing Schedule For:</span>
             <span className="font-bold text-white">
-              {MOCK_DIVISIONS.find((d) => d.id === selectedDivisionId)?.name}
+              {getDivisionName(selectedDivisionId)}
             </span>
           </div>
         </div>
@@ -368,6 +369,10 @@ export default function AdminTimetablePage() {
         {loading ? (
           <div className="p-12 text-center text-slate-400 text-sm font-mono animate-pulse">
             Loading timetable slots...
+          </div>
+        ) : !selectedDivisionId ? (
+          <div className="p-12 text-center text-slate-400 text-sm font-mono border border-dashed border-slate-800 rounded-xl">
+            No division selected for this school yet.
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -471,11 +476,11 @@ export default function AdminTimetablePage() {
                   onChange={(e) => setFormDivisionId(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 font-mono"
                 >
-                  {MOCK_DIVISIONS.map((d) => (
+                  {divisions.length ? divisions.map((d) => (
                     <option key={d.id} value={d.id}>
                       {d.name}
                     </option>
-                  ))}
+                  )) : <option value="">No divisions available</option>}
                 </select>
               </div>
 
@@ -487,11 +492,11 @@ export default function AdminTimetablePage() {
                     onChange={(e) => setFormSubjectId(e.target.value)}
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 font-mono"
                   >
-                    {MOCK_SUBJECTS.map((s) => (
+                    {subjects.length ? subjects.map((s) => (
                       <option key={s.id} value={s.id}>
                         {s.name}
                       </option>
-                    ))}
+                    )) : <option value="">No subjects available</option>}
                   </select>
                 </div>
 
@@ -502,11 +507,11 @@ export default function AdminTimetablePage() {
                     onChange={(e) => setFormTeacherId(e.target.value)}
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 font-mono"
                   >
-                    {MOCK_TEACHERS.map((t) => (
+                    {teachers.length ? teachers.map((t) => (
                       <option key={t.id} value={t.id}>
-                        {t.name}
+                        {t.full_name}
                       </option>
-                    ))}
+                    )) : <option value="">No teachers available</option>}
                   </select>
                 </div>
               </div>

@@ -15,6 +15,7 @@ import {
   InAppNotification, 
   DirectMessage 
 } from '@/lib/actions/communicationActions';
+import { getStudentAttendanceHistory } from '@/lib/actions/attendanceActions';
 
 export default function ParentDashboardPage() {
   const [children, setChildren] = useState<LinkedStudent[]>([]);
@@ -42,6 +43,11 @@ export default function ParentDashboardPage() {
 
         const resOverview = await getParentChildOverview('SCH-DEMO-001', child.studentId);
         if (resOverview.success) setOverview(resOverview.data);
+
+        const attendanceRes = await getStudentAttendanceHistory('SCH-DEMO-001', child.studentId);
+        if (attendanceRes.success) {
+          setOverview((current: any) => ({ ...current, attendanceSummary: attendanceRes.summary }));
+        }
       }
 
       const resAnn = await getAnnouncements('SCH-DEMO-001');
@@ -147,6 +153,12 @@ export default function ParentDashboardPage() {
                   <span className="text-xs text-slate-400">Unread Alerts</span>
                   <div className="text-2xl font-bold text-amber-400">{unreadCount} Notifications</div>
                   <span className="text-[11px] text-slate-400">In-App Alert System</span>
+                </div>
+
+                <div className="p-5 bg-slate-900 border border-slate-800 rounded-2xl space-y-1">
+                  <span className="text-xs text-slate-400">Attendance Summary</span>
+                  <div className="text-2xl font-bold text-emerald-400">{overview?.attendanceSummary?.attendancePercentage ?? 0}%</div>
+                  <span className="text-[11px] text-emerald-300">{overview?.attendanceSummary?.present ?? 0} present / {overview?.attendanceSummary?.absent ?? 0} absent</span>
                 </div>
               </div>
             )}

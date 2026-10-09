@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import AppShell from '@/components/AppShell';
 import { BookOpen, Calendar, Award, ShieldCheck, FileText, Eye, Lock, X, Download, Code, FileCode, CheckCircle2 } from 'lucide-react';
 import { getTodaysNotes } from '@/lib/actions/academicActions';
+import { getStudentAttendanceHistory } from '@/lib/actions/attendanceActions';
 import { getDivisionFiles, SharedFileMetadata } from '@/lib/actions/fileActions';
 
 interface StudyMaterial {
@@ -54,6 +55,8 @@ export default function StudentWebPage() {
   const [selectedMaterial, setSelectedMaterial] = useState<StudyMaterial | null>(null);
   const [liveNotes, setLiveNotes] = useState<any[]>([]);
   const [liveFiles, setLiveFiles] = useState<SharedFileMetadata[]>([]);
+  const [attendanceSummary, setAttendanceSummary] = useState<any>(null);
+  const [attendanceHistory, setAttendanceHistory] = useState<any[]>([]);
 
   useEffect(() => {
     async function loadStudentData() {
@@ -65,6 +68,12 @@ export default function StudentWebPage() {
         const filesRes = await getDivisionFiles('SCH-DEMO-001', 'div-7a');
         if (filesRes.success && filesRes.data) {
           setLiveFiles(filesRes.data);
+        }
+
+        const attendanceRes = await getStudentAttendanceHistory('SCH-DEMO-001', 'STUDENT-DEMO-001');
+        if (attendanceRes.success) {
+          setAttendanceSummary(attendanceRes.summary || null);
+          setAttendanceHistory(attendanceRes.data || []);
         }
       } catch (err) {
         console.error('Error fetching student academic content:', err);
@@ -91,6 +100,27 @@ export default function StudentWebPage() {
             Attendance: 98.2%
           </span>
         </div>
+
+        {attendanceSummary && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
+              <p className="text-xs text-slate-400">Recorded days</p>
+              <p className="mt-2 text-2xl font-bold text-white">{attendanceSummary.totalRecordedDays}</p>
+            </div>
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
+              <p className="text-xs text-slate-400">Present</p>
+              <p className="mt-2 text-2xl font-bold text-emerald-400">{attendanceSummary.present}</p>
+            </div>
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
+              <p className="text-xs text-slate-400">Absent</p>
+              <p className="mt-2 text-2xl font-bold text-rose-400">{attendanceSummary.absent}</p>
+            </div>
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
+              <p className="text-xs text-slate-400">Rate</p>
+              <p className="mt-2 text-2xl font-bold text-indigo-400">{attendanceSummary.attendancePercentage}%</p>
+            </div>
+          </div>
+        )}
 
         {/* Student Schedule & Academic Performance Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

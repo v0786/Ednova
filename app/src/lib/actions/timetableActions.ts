@@ -39,6 +39,194 @@ export interface UpdateTimetableEntryInput extends CreateTimetableEntryInput {
   id: string;
 }
 
+export interface TimetableSchoolContext {
+  schoolId: string;
+  academicYears: Array<{ id: string; name: string; is_current?: boolean }>;
+  divisions: Array<{ id: string; name: string; grade_id?: string; code?: string }>;
+  subjects: Array<{ id: string; name: string; code?: string }>;
+  teachers: Array<{ id: string; full_name: string; email?: string }>;
+  activeAcademicYearId: string;
+  defaultDivisionId: string;
+}
+
+export async function getCurrentSchoolTimetableContext(): Promise<{ success: boolean; error?: string; data?: TimetableSchoolContext }> {
+  const session = await verifyServerSession(['SUPER_ADMIN', 'SCHOOL_ADMIN', 'PRINCIPAL', 'ADMIN_STAFF', 'TEACHER', 'STUDENT', 'PARENT']);
+
+  const schoolId = session.schoolId;
+  const [yearsResult, divisionsResult, subjectsResult, teacherResult] = await Promise.all([
+    supabase.from('academic_years').select('id, name, is_current').eq('school_id', schoolId).order('start_date', { ascending: false }),
+    supabase.from('divisions').select('id, name, code, grade_id').eq('school_id', schoolId).order('name', { ascending: true }),
+    supabase.from('subjects').select('id, name, code').eq('school_id', schoolId).order('name', { ascending: true }),
+    supabase.from('profiles').select('id, full_name, email').eq('school_id', schoolId).eq('role', 'TEACHER').order('full_name', { ascending: true })
+  ]);
+
+  if (yearsResult.error) return { success: false, error: yearsResult.error.message };
+  if (divisionsResult.error) return { success: false, error: divisionsResult.error.message };
+  if (subjectsResult.error) return { success: false, error: subjectsResult.error.message };
+  if (teacherResult.error) return { success: false, error: teacherResult.error.message };
+
+  const academicYears = (yearsResult.data || []).map((year: any) => ({
+    id: year.id,
+    name: year.name,
+    is_current: Boolean(year.is_current),
+  }));
+
+  const divisions = (divisionsResult.data || []).map((division: any) => ({
+    id: division.id,
+    name: division.name,
+    grade_id: division.grade_id ?? '',
+    code: division.code ?? '',
+  }));
+
+  const subjects = (subjectsResult.data || []).map((subject: any) => ({
+    id: subject.id,
+    name: subject.name,
+    code: subject.code ?? '',
+  }));
+
+  const teachers = (teacherResult.data || []).map((teacher: any) => ({
+    id: teacher.id,
+    full_name: teacher.full_name ?? teacher.email ?? 'Teacher',
+    email: teacher.email ?? '',
+  }));
+
+  const activeAcademicYearId = academicYears.find((year) => year.is_current)?.id || academicYears[0]?.id || '';
+  let defaultDivisionId = divisions[0]?.id || '';
+
+  if (session.role === 'STUDENT') {
+    const enrollmentResult = await supabase
+      .from('student_enrollments')
+      .select('division_id, academic_year_id')
+      .eq('school_id', schoolId)
+      .eq('student_id', session.userId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (!enrollmentResult.error && enrollmentResult.data) {
+      defaultDivisionId = enrollmentResult.data.division_id || defaultDivisionId;
+      if (enrollmentResult.data.academic_year_id && !activeAcademicYearId) {
+        return { success: false, error: 'No active academic year is available for the school.' };
+      }
+    }
+  }
+
+  if (session.role === 'TEACHER') {
+    const assignmentResult = await supabase
+      .from('teacher_assignments')
+      .select('division_id, academic_year_id')
+      .eq('school_id', schoolId)
+      .eq('teacher_id', session.userId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (!assignmentResult.error && assignmentResult.data) {
+      defaultDivisionId = assignmentResult.data.division_id || defaultDivisionId;
+      if (assignmentResult.data.academic_year_id && !academicYears.some((year) => year.id === assignmentResult.data.academic_year_id)) {
+        // keep parent year selection when it matches the school set
+      }
+    }
+  }
+
+  return {
+    success: true,
+    data: {
+      schoolId,
+      academicYears,
+      divisions,
+      subjects,
+      teachers,
+      activeAcademicYearId,
+      defaultDivisionId,
+    },
+  };
+}
+
+export async function getCurrentTeacherTimetableData(): Promise<{ success: boolean; error?: string; schoolId: string; academicYearId: string; academicYearName: string; divisionIds: string[]; today: TimetableEntry[]; weekly: TimetableEntry[] }> {
+  const session = await verifyServerSession(['TEACHER']);
+  const schoolId = session.schoolId;
+
+  const assignmentsResult = await supabase
+    .from('teacher_assignments')
+    .select('id, division_id, academic_year_id, academic_years!teacher_assignments_academic_year_id_fkey(id, name), subjects!teacher_assignments_subject_id_fkey(id, name), divisions!teacher_assignments_division_id_fkey(id, name)')
+    .eq('school_id', schoolId)
+    .eq('teacher_id', session.userId)
+    .order('created_at', { ascending: false });
+
+  if (assignmentsResult.error) {
+    return { success: false, error: assignmentsResult.error.message, schoolId, academicYearId: '', academicYearName: 'Current year', divisionIds: [], today: [], weekly: [] };
+  }
+
+  const assignments = assignmentsResult.data || [];
+  const academicYearId = assignments[0]?.academic_year_id || '';
+  const divisionIds = Array.from(new Set((assignments as any[]).map((assignment) => assignment.division_id).filter(Boolean)));
+
+  const weeklyResult = academicYearId
+    ? await supabase
+        .from('timetable_entries')
+        .select('*')
+        .eq('school_id', schoolId)
+        .eq('academic_year_id', academicYearId)
+        .eq('teacher_id', session.userId)
+        .order('day_of_week', { ascending: true })
+        .order('period_number', { ascending: true })
+    : { data: [] as any[], error: null };
+
+  if (weeklyResult.error) {
+    return { success: false, error: weeklyResult.error.message, schoolId, academicYearId, academicYearName: 'Current year', divisionIds, today: [], weekly: [] };
+  }
+
+  const todayDay = new Date().getDay() === 0 ? 7 : new Date().getDay();
+  const today = (weeklyResult.data || []).filter((entry: any) => Number(entry.day_of_week) === todayDay);
+  const academicYearData: any = assignments[0]?.academic_years ?? [];
+
+  return {
+    success: true,
+    schoolId,
+    academicYearId,
+    academicYearName: Array.isArray(academicYearData) ? (academicYearData[0]?.name ?? 'Current year') : (academicYearData?.name ?? 'Current year'),
+    divisionIds,
+    today: today as TimetableEntry[],
+    weekly: (weeklyResult.data || []) as TimetableEntry[],
+  };
+}
+
+export async function getCurrentStudentTimetableData(): Promise<{ success: boolean; error?: string; schoolId: string; academicYearId: string; divisionId: string; divisionName: string; academicYearName: string; data: TimetableEntry[] }> {
+  const session = await verifyServerSession(['STUDENT']);
+  const schoolId = session.schoolId;
+
+  const enrollmentResult = await supabase
+    .from('student_enrollments')
+    .select('id, academic_year_id, division_id, academic_years!student_enrollments_academic_year_id_fkey(id, name), divisions!student_enrollments_division_id_fkey(id, name)')
+    .eq('school_id', schoolId)
+    .eq('student_id', session.userId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+
+  if (enrollmentResult.error) {
+    return { success: false, error: enrollmentResult.error.message, schoolId, academicYearId: '', divisionId: '', divisionName: 'Current division', academicYearName: 'Current year', data: [] };
+  }
+
+  const academicYearId = enrollmentResult.data.academic_year_id || '';
+  const divisionId = enrollmentResult.data.division_id || '';
+  const scheduleResult = await getStudentSchedule(schoolId, academicYearId, divisionId);
+  const academicYearData: any = enrollmentResult.data.academic_years ?? [];
+  const divisionData: any = enrollmentResult.data.divisions ?? [];
+
+  return {
+    success: scheduleResult.success,
+    error: scheduleResult.success ? undefined : scheduleResult.error,
+    schoolId,
+    academicYearId,
+    divisionId,
+    divisionName: Array.isArray(divisionData) ? (divisionData[0]?.name ?? 'Current division') : (divisionData?.name ?? 'Current division'),
+    academicYearName: Array.isArray(academicYearData) ? (academicYearData[0]?.name ?? 'Current year') : (academicYearData?.name ?? 'Current year'),
+    data: scheduleResult.data || [],
+  };
+}
+
 /**
  * Check for scheduling conflicts (Teacher double-booking, Division double-booking, Room double-booking)
  */

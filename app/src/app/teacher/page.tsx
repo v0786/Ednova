@@ -14,20 +14,22 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import {
-  getTeacherTodaySchedule,
-  getTeacherSchedule,
+  getCurrentTeacherTimetableData,
   TimetableEntry,
 } from '@/lib/actions/timetableActions';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 export default function TeacherWebPage() {
-  const [schoolId] = useState('SCH-DEMO-001');
-  const [academicYearId] = useState('AY-2025-2026');
   const [todaySchedule, setTodaySchedule] = useState<TimetableEntry[]>([]);
   const [weeklySchedule, setWeeklySchedule] = useState<TimetableEntry[]>([]);
   const [selectedDayTab, setSelectedDayTab] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [schoolContext, setSchoolContext] = useState<{ schoolId: string; academicYearId: string; academicYearName?: string }>({
+    schoolId: '',
+    academicYearId: '',
+    academicYearName: 'Current academic year',
+  });
 
   useEffect(() => {
     fetchSchedule();
@@ -36,45 +38,19 @@ export default function TeacherWebPage() {
   const fetchSchedule = async () => {
     setLoading(true);
     try {
-      const todayRes = await getTeacherTodaySchedule(schoolId, academicYearId);
-      const weeklyRes = await getTeacherSchedule(schoolId, academicYearId);
-
-      if (todayRes.success && todayRes.data && todayRes.data.length > 0) {
-        setTodaySchedule(todayRes.data);
+      const res = await getCurrentTeacherTimetableData();
+      if (res.success) {
+        setTodaySchedule(res.today || []);
+        setWeeklySchedule(res.weekly || []);
+        setSchoolContext({
+          schoolId: res.schoolId,
+          academicYearId: res.academicYearId,
+          academicYearName: res.academicYearName || 'Current academic year',
+        });
       } else {
-        // Fallback initialized entries for demonstrative UI
-        setTodaySchedule([
-          {
-            id: 't-slot-1',
-            school_id: schoolId,
-            academic_year_id: academicYearId,
-            division_id: 'Grade 7 - Section A',
-            subject_id: 'Mathematics',
-            teacher_id: 'current-user',
-            day_of_week: 1,
-            period_number: 1,
-            start_time: '08:30',
-            end_time: '09:15',
-            room_number: 'Room 201',
-          },
-          {
-            id: 't-slot-2',
-            school_id: schoolId,
-            academic_year_id: academicYearId,
-            division_id: 'Grade 8 - Section B',
-            subject_id: 'Physics',
-            teacher_id: 'current-user',
-            day_of_week: 1,
-            period_number: 3,
-            start_time: '10:15',
-            end_time: '11:00',
-            room_number: 'Lab 03',
-          },
-        ]);
-      }
-
-      if (weeklyRes.success && weeklyRes.data) {
-        setWeeklySchedule(weeklyRes.data);
+        setTodaySchedule([]);
+        setWeeklySchedule([]);
+        console.error('Error fetching teacher schedule:', res.error);
       }
     } catch (err) {
       console.error('Error fetching teacher schedule:', err);
@@ -153,7 +129,7 @@ export default function TeacherWebPage() {
               <Clock className="w-5 h-5 text-indigo-400" /> Today&apos;s Assigned Classes
             </h2>
             <span className="text-xs text-slate-400 font-mono">
-              Academic Year: 2025–2026
+              Academic Year: {schoolContext.academicYearName}
             </span>
           </div>
 
