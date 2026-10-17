@@ -1,6 +1,6 @@
 'use server';
 
-import { verifyServerSession, validateTenantAccess } from '../auth/rbacGuard';
+import { verifyServerSession, validateTenantAccess, type AuthSessionContext } from '../auth/rbacGuard';
 import { supabase } from '../supabaseClient';
 
 export interface TimetableEntry {
@@ -37,6 +37,36 @@ export interface CreateTimetableEntryInput {
 
 export interface UpdateTimetableEntryInput extends CreateTimetableEntryInput {
   id: string;
+}
+
+/**
+ * Input for conflict detection check
+ */
+export interface TimetableConflictCheckInput {
+  teacherId: string;
+  divisionId: string;
+  room?: string;
+  dayOfWeek: number;
+  startTime: string; // HH:MM format
+  endTime: string;   // HH:MM format
+  excludeEntryId?: string; // For updates - exclude this entry from conflict check
+}
+
+/**
+ * Represents a single detected conflict
+ */
+export interface TimetableConflict {
+  type: 'TEACHER' | 'ROOM' | 'DIVISION';
+  existingEntryId: string;
+  description: string;
+}
+
+/**
+ * Result of conflict detection
+ */
+export interface ConflictCheckResult {
+  hasConflict: boolean;
+  conflicts: TimetableConflict[];
 }
 
 export interface TimetableSchoolContext {
@@ -228,74 +258,276 @@ export async function getCurrentStudentTimetableData(): Promise<{ success: boole
 }
 
 /**
- * Check for scheduling conflicts (Teacher double-booking, Division double-booking, Room double-booking)
+ * Converts time string (HH:MM) to minutes since midnight for comparison
  */
-export async function checkTimetableConflict(input: CreateTimetableEntryInput, excludeId?: string) {
-  const { schoolId, academicYearId, divisionId, teacherId, dayOfWeek, periodNumber, roomNumber } = input;
+function timeToMinutes(timeStr: string): number {
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  return hours * 60 + minutes;
+}
 
-  // 1. Check Teacher Conflict
-  const teacherQuery = supabase
+/**
+ * Checks if two time ranges overlap
+ * Range 1: [startA, endA), Range 2: [startB, endB)
+ * Overlap occurs when: startA < endB && startB < endA
+ */
+function doTimeRangesOverlap(
+  startA: string,
+  endA: string,
+  startB: string,
+  endB: string
+): boolean {
+  const startAMin = timeToMinutes(startA);
+  const endAMin = timeToMinutes(endA);
+  const startBMin = timeToMinutes(startB);
+  const endBMin = timeToMinutes(endB);
+
+  // Strict overlap check: periods overlap if one starts before the other ends
+  return startAMin < endBMin && startBMin < endAMin;
+}
+
+/**
+ * Formats time for display (e.g., "08:00" -> "8:00 AM")
+ */
+function formatTime(timeStr: string): string {
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  const period = hours >= 12 ? 'PM' : 'AM';
+  const displayHour = hours % 12 || 12;
+  return `${displayHour}:${minutes.toString().padStart(2, '0')} ${period}`;
+}
+
+/**
+ * Gets day name from day of week number (1=Mon, 7=Sun)
+ */
+function getDayName(dayOfWeek: number): string {
+  const days = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  return days[dayOfWeek] || `Day ${dayOfWeek}`;
+}
+
+/**
+ * Advanced conflict detection for timetable scheduling
+ * Detects overlapping time slots for teacher, room, and division
+ *
+ * @param entry - The entry to check for conflicts
+ * @param session - Authentication context for tenant isolation
+ * @returns ConflictCheckResult with all detected conflicts
+ */
+export async function checkTimetableConflict(
+  entry: TimetableConflictCheckInput,
+  session: AuthSessionContext
+): Promise<ConflictCheckResult> {
+  const conflicts: TimetableConflict[] = [];
+
+  // Perform conflict checks in parallel for performance
+  const [teacherConflicts, roomConflicts, divisionConflicts] = await Promise.all([
+    checkTeacherConflicts(entry, session),
+    entry.room ? checkRoomConflicts(entry, session) : [],
+    checkDivisionConflicts(entry, session),
+  ]);
+
+  conflicts.push(...teacherConflicts, ...roomConflicts, ...divisionConflicts);
+
+  return {
+    hasConflict: conflicts.length > 0,
+    conflicts,
+  };
+}
+
+/**
+ * Check for teacher double-booking conflicts
+ */
+async function checkTeacherConflicts(
+  entry: TimetableConflictCheckInput,
+  session: AuthSessionContext
+): Promise<TimetableConflict[]> {
+  const conflicts: TimetableConflict[] = [];
+
+  const query = supabase
     .from('timetable_entries')
-    .select('id, division_id, period_number, day_of_week')
-    .eq('school_id', schoolId)
-    .eq('academic_year_id', academicYearId)
-    .eq('teacher_id', teacherId)
-    .eq('day_of_week', dayOfWeek)
-    .eq('period_number', periodNumber);
+    .select('id, start_time, end_time, room_number, divisions!inner(name, grades(name))')
+    .eq('school_id', session.schoolId)
+    .eq('teacher_id', entry.teacherId)
+    .eq('day_of_week', entry.dayOfWeek);
 
-  if (excludeId) teacherQuery.neq('id', excludeId);
-
-  const { data: teacherConflicts } = await teacherQuery;
-  if (teacherConflicts && teacherConflicts.length > 0) {
-    return {
-      hasConflict: true,
-      type: 'TEACHER_CONFLICT',
-      message: `TEACHER CONFLICT: Teacher is already assigned to another class during Period ${periodNumber} on Day ${dayOfWeek}.`,
-    };
+  if (entry.excludeEntryId) {
+    query.neq('id', entry.excludeEntryId);
   }
 
-  // 2. Check Division / Class Conflict
-  const divisionQuery = supabase
-    .from('timetable_entries')
-    .select('id, subject_id, period_number, day_of_week')
-    .eq('school_id', schoolId)
-    .eq('academic_year_id', academicYearId)
-    .eq('division_id', divisionId)
-    .eq('day_of_week', dayOfWeek)
-    .eq('period_number', periodNumber);
+  const { data: existingEntries, error } = await query;
 
-  if (excludeId) divisionQuery.neq('id', excludeId);
-
-  const { data: divisionConflicts } = await divisionQuery;
-  if (divisionConflicts && divisionConflicts.length > 0) {
-    return {
-      hasConflict: true,
-      type: 'DIVISION_CONFLICT',
-      message: `CLASS CONFLICT: Selected Class already has a subject scheduled for Period ${periodNumber} on Day ${dayOfWeek}.`,
-    };
+  if (error || !existingEntries) {
+    return conflicts;
   }
 
-  // 3. Check Room Conflict (if room specified)
-  if (roomNumber && roomNumber.trim() !== '') {
-    const roomQuery = supabase
-      .from('timetable_entries')
-      .select('id, room_number')
-      .eq('school_id', schoolId)
-      .eq('academic_year_id', academicYearId)
-      .eq('room_number', roomNumber.trim())
-      .eq('day_of_week', dayOfWeek)
-      .eq('period_number', periodNumber);
+  for (const existing of existingEntries) {
+    if (
+      doTimeRangesOverlap(
+        entry.startTime,
+        entry.endTime,
+        existing.start_time,
+        existing.end_time
+      )
+    ) {
+      const division = (existing as any).divisions;
+      const divisionName = division?.name || 'Unknown Class';
+      const gradeName = division?.grades?.name || '';
+      const location = entry.room ? ` in ${entry.room}` : '';
 
-    if (excludeId) roomQuery.neq('id', excludeId);
-
-    const { data: roomConflicts } = await roomQuery;
-    if (roomConflicts && roomConflicts.length > 0) {
-      return {
-        hasConflict: true,
-        type: 'ROOM_CONFLICT',
-        message: `ROOM CONFLICT: Room "${roomNumber}" is already booked for Period ${periodNumber} on Day ${dayOfWeek}.`,
-      };
+      conflicts.push({
+        type: 'TEACHER',
+        existingEntryId: existing.id,
+        description: `Teacher is already scheduled for ${gradeName} ${divisionName} ` +
+          `on ${getDayName(entry.dayOfWeek)} from ${formatTime(existing.start_time)} ` +
+          `to ${formatTime(existing.end_time)}${location}. Overlaps with requested ` +
+          `${formatTime(entry.startTime)} - ${formatTime(entry.endTime)}.`,
+      });
     }
+  }
+
+  return conflicts;
+}
+
+/**
+ * Check for room double-booking conflicts
+ */
+async function checkRoomConflicts(
+  entry: TimetableConflictCheckInput,
+  session: AuthSessionContext
+): Promise<TimetableConflict[]> {
+  const conflicts: TimetableConflict[] = [];
+
+  if (!entry.room || entry.room.trim() === '') {
+    return conflicts;
+  }
+
+  const query = supabase
+    .from('timetable_entries')
+    .select('id, start_time, end_time, teacher_id, subjects!inner(name)')
+    .eq('school_id', session.schoolId)
+    .eq('room_number', entry.room.trim())
+    .eq('day_of_week', entry.dayOfWeek);
+
+  if (entry.excludeEntryId) {
+    query.neq('id', entry.excludeEntryId);
+  }
+
+  const { data: existingEntries, error } = await query;
+
+  if (error || !existingEntries) {
+    return conflicts;
+  }
+
+  for (const existing of existingEntries) {
+    if (
+      doTimeRangesOverlap(
+        entry.startTime,
+        entry.endTime,
+        existing.start_time,
+        existing.end_time
+      )
+    ) {
+      const subject = (existing as any).subjects;
+      const subjectName = subject?.name || 'Unknown Subject';
+
+      conflicts.push({
+        type: 'ROOM',
+        existingEntryId: existing.id,
+        description: `Room "${entry.room}" is already booked for ${subjectName} ` +
+          `on ${getDayName(entry.dayOfWeek)} from ${formatTime(existing.start_time)} ` +
+          `to ${formatTime(existing.end_time)}. Overlaps with requested ` +
+          `${formatTime(entry.startTime)} - ${formatTime(entry.endTime)}.`,
+      });
+    }
+  }
+
+  return conflicts;
+}
+
+/**
+ * Check for class/division double-booking conflicts
+ */
+async function checkDivisionConflicts(
+  entry: TimetableConflictCheckInput,
+  session: AuthSessionContext
+): Promise<TimetableConflict[]> {
+  const conflicts: TimetableConflict[] = [];
+
+  const query = supabase
+    .from('timetable_entries')
+    .select('id, start_time, end_time, teacher_id, room_number, subjects!inner(name)')
+    .eq('school_id', session.schoolId)
+    .eq('division_id', entry.divisionId)
+    .eq('day_of_week', entry.dayOfWeek);
+
+  if (entry.excludeEntryId) {
+    query.neq('id', entry.excludeEntryId);
+  }
+
+  const { data: existingEntries, error } = await query;
+
+  if (error || !existingEntries) {
+    return conflicts;
+  }
+
+  for (const existing of existingEntries) {
+    if (
+      doTimeRangesOverlap(
+        entry.startTime,
+        entry.endTime,
+        existing.start_time,
+        existing.end_time
+      )
+    ) {
+      const subject = (existing as any).subjects;
+      const subjectName = subject?.name || 'Unknown Subject';
+
+      conflicts.push({
+        type: 'DIVISION',
+        existingEntryId: existing.id,
+        description: `Class has ${subjectName} scheduled for ${getDayName(entry.dayOfWeek)} ` +
+          `from ${formatTime(existing.start_time)} to ${formatTime(existing.end_time)}. ` +
+          `Overlaps with requested ${formatTime(entry.startTime)} - ${formatTime(entry.endTime)}.`,
+      });
+    }
+  }
+
+  return conflicts;
+}
+
+/**
+ * Legacy conflict check wrapper for CreateTimetableEntryInput
+ * Maintains backwards compatibility
+ */
+export async function checkLegacyTimetableConflict(
+  input: CreateTimetableEntryInput,
+  excludeId?: string
+): Promise<{ hasConflict: boolean; type?: string; message?: string }> {
+  // Build session context from input
+  const session = {
+    userId: input.teacherId,
+    email: '',
+    role: 'SCHOOL_ADMIN' as const,
+    schoolId: input.schoolId,
+  };
+
+  const entry: TimetableConflictCheckInput = {
+    teacherId: input.teacherId,
+    divisionId: input.divisionId,
+    room: input.roomNumber,
+    dayOfWeek: input.dayOfWeek,
+    startTime: input.startTime,
+    endTime: input.endTime,
+    excludeEntryId: excludeId,
+  };
+
+  const result = await checkTimetableConflict(entry, session);
+
+  if (result.hasConflict && result.conflicts.length > 0) {
+    const firstConflict = result.conflicts[0];
+    return {
+      hasConflict: true,
+      type: firstConflict.type,
+      message: firstConflict.description,
+    };
   }
 
   return { hasConflict: false };
@@ -318,7 +550,7 @@ export async function createTimetableEntry(input: CreateTimetableEntryInput) {
   }
 
   // 4. Detailed Conflict Pre-Check
-  const conflictCheck = await checkTimetableConflict(input);
+  const conflictCheck = await checkLegacyTimetableConflict(input);
   if (conflictCheck.hasConflict) {
     return { success: false, error: conflictCheck.message };
   }
@@ -360,7 +592,7 @@ export async function updateTimetableEntry(input: UpdateTimetableEntryInput) {
   }
 
   // Conflict Pre-Check excluding self
-  const conflictCheck = await checkTimetableConflict(input, input.id);
+  const conflictCheck = await checkLegacyTimetableConflict(input, input.id);
   if (conflictCheck.hasConflict) {
     return { success: false, error: conflictCheck.message };
   }
@@ -433,27 +665,6 @@ export async function getTimetableEntries(schoolId: string, academicYearId: stri
   return { success: true, data: data as TimetableEntry[] };
 }
 
-export async function getTeacherSchedule(schoolId: string, academicYearId: string, teacherId?: string) {
-  const session = await verifyServerSession();
-  validateTenantAccess(schoolId, session);
-
-  // If no teacherId supplied, target authenticated user identity
-  const targetTeacherId = teacherId || session.userId;
-
-  const { data, error } = await supabase
-    .from('timetable_entries')
-    .select('*')
-    .eq('school_id', schoolId)
-    .eq('academic_year_id', academicYearId)
-    .eq('teacher_id', targetTeacherId);
-
-  if (error) {
-    return { success: false, error: error.message, data: [] };
-  }
-
-  return { success: true, data: data as TimetableEntry[] };
-}
-
 export async function getTeacherTodaySchedule(schoolId: string, academicYearId: string, dayOfWeekOverride?: number) {
   const session = await verifyServerSession();
   validateTenantAccess(schoolId, session);
@@ -516,5 +727,136 @@ export async function getStudentTodaySchedule(schoolId: string, academicYearId: 
   }
 
   return { success: true, data: data as TimetableEntry[] };
+}
+
+/**
+ * Teacher schedule entry with enriched class information
+ */
+export interface TeacherScheduleEntry {
+  id: string;
+  classId: string;           // division_id
+  subject: string;           // subject name
+  subjectCode?: string;      // subject code
+  grade: string;             // grade name (e.g., "Grade 7")
+  division: string;          // division/section name (e.g., "Section A")
+  day: number;               // 1 (Mon) - 7 (Sun)
+  startTime: string;         // HH:MM format
+  endTime: string;           // HH:MM format
+  room?: string | null;      // room number
+  periodNumber: number;      // period slot number
+}
+
+/**
+ * Teacher schedule result with metadata
+ */
+export interface TeacherScheduleResult {
+  success: boolean;
+  error?: string;
+  data: TeacherScheduleEntry[];
+  academicYearId: string;
+  academicYearName: string;
+  schoolId: string;
+}
+
+/**
+ * Fetches a teacher's weekly schedule with enriched class information.
+ * Automatically filters by current academic year and enforces tenant isolation.
+ *
+ * @param teacherId - The teacher's profile ID (optional, defaults to current session user)
+ * @returns TeacherScheduleResult with schedule entries and metadata
+ */
+export async function getTeacherSchedule(teacherId?: string): Promise<TeacherScheduleResult> {
+  // 1. Verify session and get context
+  const session = await verifyServerSession([
+    'SUPER_ADMIN',
+    'SCHOOL_ADMIN',
+    'PRINCIPAL',
+    'ADMIN_STAFF',
+    'TEACHER',
+  ]);
+
+  const targetTeacherId = teacherId || session.userId;
+
+  // 2. Fetch current academic year for the school
+  const { data: academicYear, error: yearError } = await supabase
+    .from('academic_years')
+    .select('id, name')
+    .eq('school_id', session.schoolId)
+    .eq('is_current', true)
+    .single();
+
+  if (yearError || !academicYear) {
+    return {
+      success: false,
+      error: 'No active academic year found for this school.',
+      data: [],
+      academicYearId: '',
+      academicYearName: '',
+      schoolId: session.schoolId,
+    };
+  }
+
+  // 3. Fetch timetable entries with joins for enriched data
+  const { data: entries, error: entriesError } = await supabase
+    .from('timetable_entries')
+    .select(
+      `
+      id,
+      division_id,
+      subject_id,
+      day_of_week,
+      period_number,
+      start_time,
+      end_time,
+      room_number,
+      subjects!timetable_entries_subject_id_fkey(id, name, code),
+      divisions!timetable_entries_division_id_fkey(id, name, grade_id, grades!divisions_grade_id_fkey(id, name))
+    `
+    )
+    .eq('school_id', session.schoolId)
+    .eq('academic_year_id', academicYear.id)
+    .eq('teacher_id', targetTeacherId)
+    .order('day_of_week', { ascending: true })
+    .order('period_number', { ascending: true });
+
+  if (entriesError) {
+    return {
+      success: false,
+      error: entriesError.message,
+      data: [],
+      academicYearId: academicYear.id,
+      academicYearName: academicYear.name,
+      schoolId: session.schoolId,
+    };
+  }
+
+  // 4. Transform to enriched schedule entries
+  const scheduleEntries: TeacherScheduleEntry[] = (entries || []).map((entry: any) => {
+    const subject = entry.subjects || {};
+    const division = entry.divisions || {};
+    const grade = division.grades || {};
+
+    return {
+      id: entry.id,
+      classId: entry.division_id,
+      subject: subject.name || 'Unknown Subject',
+      subjectCode: subject.code,
+      grade: grade.name || 'Unknown Grade',
+      division: division.name || 'Unknown Division',
+      day: entry.day_of_week,
+      startTime: entry.start_time,
+      endTime: entry.end_time,
+      room: entry.room_number,
+      periodNumber: entry.period_number,
+    };
+  });
+
+  return {
+    success: true,
+    data: scheduleEntries,
+    academicYearId: academicYear.id,
+    academicYearName: academicYear.name,
+    schoolId: session.schoolId,
+  };
 }
 

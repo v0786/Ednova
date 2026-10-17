@@ -525,3 +525,388 @@ export async function getTodaysNotes(
   return { success: true, data: data || [] };
 }
 
+// ============================================================================
+// Lesson Log Actions - TASK-20251017-BACKEND-003
+// ============================================================================
+
+export interface LessonLog {
+  id: string;
+  teacher_id: string;
+  division_id: string;
+  subject_id: string;
+  academic_year_id: string;
+  school_id: string;
+  date: string;
+  topics_covered: string[];
+  homework_assigned: string;
+  notes?: string | null;
+  created_at: string;
+  updated_at: string;
+  // Joined fields for display
+  teacher_name?: string;
+  division_name?: string;
+  subject_name?: string;
+}
+
+export interface CreateLessonLogInput {
+  schoolId: string;
+  divisionId: string;
+  subjectId: string;
+  academicYearId: string;
+  date: string; // ISO date string (YYYY-MM-DD)
+  topicsCovered: string[];
+  homeworkAssigned: string;
+  notes?: string;
+}
+
+export interface UpdateLessonLogInput {
+  id: string;
+  schoolId: string;
+  divisionId?: string;
+  subjectId?: string;
+  academicYearId?: string;
+  date?: string;
+  topicsCovered?: string[];
+  homeworkAssigned?: string;
+  notes?: string;
+}
+
+export interface LessonLogFilterInput {
+  schoolId: string;
+  teacherId?: string;
+  divisionId?: string;
+  subjectId?: string;
+  academicYearId?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+/**
+ * Create a new lesson log
+ * Only TEACHER, SCHOOL_ADMIN, and PRINCIPAL roles can create logs
+ */
+export async function createLessonLog(input: CreateLessonLogInput) {
+  // 1. RBAC Guard - Only teachers and admin staff can create lesson logs
+  const session = await verifyServerSession(['TEACHER', 'SCHOOL_ADMIN', 'PRINCIPAL', 'SUPER_ADMIN']);
+
+  // 2. Tenant Isolation Enforcement
+  validateTenantAccess(input.schoolId, session);
+
+  // 3. Validate required fields
+  if (!input.divisionId || !input.subjectId || !input.academicYearId) {
+    return { success: false, error: 'Division, subject, and academic year are required.' };
+  }
+
+  if (!input.date || !/^(\d{4})-(\d{2})-(\d{2})$/.test(input.date)) {
+    return { success: false, error: 'Valid date (YYYY-MM-DD) is required.' };
+  }
+
+  if (!Array.isArray(input.topicsCovered) || input.topicsCovered.length === 0) {
+    return { success: false, error: 'At least one topic must be covered.' };
+  }
+
+  if (!input.homeworkAssigned || input.homeworkAssigned.trim().length === 0) {
+    return { success: false, error: 'Homework assignment is required.' };
+  }
+
+  // 4. Verify teacher assignment (teachers can only log for their assigned divisions/subjects)
+  if (session.role === 'TEACHER') {
+    const { data: assignment, error: assignmentError } = await supabase
+      .from('teacher_assignments')
+      .select('id')
+      .eq('school_id', input.schoolId)
+      .eq('teacher_id', session.userId)
+      .eq('division_id', input.divisionId)
+      .eq('subject_id', input.subjectId)
+      .eq('academic_year_id', input.academicYearId)
+      .maybeSingle();
+
+    if (assignmentError || !assignment) {
+      return { success: false, error: 'You are not assigned to teach this subject in the selected division.' };
+    }
+  }
+
+  // 5. Persist the lesson log
+  const { data, error } = await supabase
+    .from('lesson_logs')
+    .insert({
+      school_id: input.schoolId,
+      teacher_id: session.userId,
+      division_id: input.divisionId,
+      subject_id: input.subjectId,
+      academic_year_id: input.academicYearId,
+      date: input.date,
+      topics_covered: input.topicsCovered,
+      homework_assigned: input.homeworkAssigned.trim(),
+      notes: input.notes?.trim() || null,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  return { success: true, data: data as LessonLog };
+}
+
+/**
+ * Get lesson logs filtered by teacher
+ * Teachers can see their own logs, admins can see any teacher's logs
+ * Students can only see logs for their enrolled division
+ */
+export async function getLessonLogsByTeacher(teacherId: string, schoolId: string, academicYearId?: string) {
+  // 1. RBAC Guard
+  const session = await verifyServerSession(['TEACHER', 'SCHOOL_ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'STUDENT', 'PARENT']);
+
+  // 2. Tenant Isolation Enforcement
+  validateTenantAccess(schoolId, session);
+
+  // 3. Permission checks
+  if (session.role === 'TEACHER' && teacherId !== session.userId) {
+    return { success: false, error: 'You can only view your own lesson logs.', data: [] };
+  }
+
+  if (session.role === 'STUDENT' || session.role === 'PARENT') {
+    return { success: false, error: 'Access denied. Use getLessonLogsByClass for student access.', data: [] };
+  }
+
+  // 4. Build query with optional academic year filter
+  let query = supabase
+    .from('lesson_logs')
+    .select(`
+      *,
+      profiles!lesson_logs_teacher_id_fkey(full_name),
+      divisions!lesson_logs_division_id_fkey(name),
+      subjects!lesson_logs_subject_id_fkey(name)
+    `)
+    .eq('school_id', schoolId)
+    .eq('teacher_id', teacherId);
+
+  if (academicYearId) {
+    query = query.eq('academic_year_id', academicYearId);
+  }
+
+  const { data, error } = await query.order('date', { ascending: false });
+
+  if (error) {
+    return { success: false, error: error.message, data: [] };
+  }
+
+  // Transform to include joined field names
+  const transformedData = (data || []).map((log: Record<string, unknown>) => ({
+    ...log,
+    teacher_name: (log.profiles as Record<string, string>)?.full_name,
+    division_name: (log.divisions as Record<string, string>)?.name,
+    subject_name: (log.subjects as Record<string, string>)?.name,
+  }));
+
+  return { success: true, data: transformedData as LessonLog[] };
+}
+
+/**
+ * Get lesson logs filtered by division/class
+ * Students can only access logs for their enrolled division
+ * Teachers can see logs for divisions they teach
+ * Admins can see all logs
+ */
+export async function getLessonLogsByClass(divisionId: string, schoolId: string, academicYearId?: string) {
+  // 1. RBAC Guard
+  const session = await verifyServerSession(['TEACHER', 'SCHOOL_ADMIN', 'PRINCIPAL', 'SUPER_ADMIN', 'STUDENT', 'PARENT']);
+
+  // 2. Tenant Isolation Enforcement
+  validateTenantAccess(schoolId, session);
+
+  // 3. Permission checks for students - verify enrollment
+  if (session.role === 'STUDENT') {
+    const { data: enrollment, error: enrollmentError } = await supabase
+      .from('student_enrollments')
+      .select('id')
+      .eq('school_id', schoolId)
+      .eq('student_id', session.userId)
+      .eq('division_id', divisionId)
+      .maybeSingle();
+
+    if (enrollmentError || !enrollment) {
+      return { success: false, error: 'You are not enrolled in this division.', data: [] };
+    }
+  }
+
+  // 4. Permission checks for parents - verify child enrollment
+  if (session.role === 'PARENT') {
+    const { data: relationships, error: relError } = await supabase
+      .from('parent_student_relationships')
+      .select('student_id')
+      .eq('school_id', schoolId)
+      .eq('parent_id', session.userId);
+
+    if (relError || !relationships || relationships.length === 0) {
+      return { success: false, error: 'No students linked to your account.', data: [] };
+    }
+
+    const studentIds = relationships.map(r => r.student_id);
+    const { data: enrollment, error: enrollmentError } = await supabase
+      .from('student_enrollments')
+      .select('id')
+      .eq('school_id', schoolId)
+      .in('student_id', studentIds)
+      .eq('division_id', divisionId)
+      .maybeSingle();
+
+    if (enrollmentError || !enrollment) {
+      return { success: false, error: 'None of your children are enrolled in this division.', data: [] };
+    }
+  }
+
+  // 5. Build query with optional academic year filter
+  let query = supabase
+    .from('lesson_logs')
+    .select(`
+      *,
+      profiles!lesson_logs_teacher_id_fkey(full_name),
+      divisions!lesson_logs_division_id_fkey(name),
+      subjects!lesson_logs_subject_id_fkey(name)
+    `)
+    .eq('school_id', schoolId)
+    .eq('division_id', divisionId);
+
+  if (academicYearId) {
+    query = query.eq('academic_year_id', academicYearId);
+  }
+
+  const { data, error } = await query.order('date', { ascending: false });
+
+  if (error) {
+    return { success: false, error: error.message, data: [] };
+  }
+
+  // Transform to include joined field names
+  const transformedData = (data || []).map((log: Record<string, unknown>) => ({
+    ...log,
+    teacher_name: (log.profiles as Record<string, string>)?.full_name,
+    division_name: (log.divisions as Record<string, string>)?.name,
+    subject_name: (log.subjects as Record<string, string>)?.name,
+  }));
+
+  return { success: true, data: transformedData as LessonLog[] };
+}
+
+/**
+ * Update an existing lesson log
+ * Only the logging teacher or admin/primary roles can update
+ */
+export async function updateLessonLog(input: UpdateLessonLogInput) {
+  // 1. RBAC Guard
+  const session = await verifyServerSession(['TEACHER', 'SCHOOL_ADMIN', 'PRINCIPAL', 'SUPER_ADMIN']);
+
+  // 2. Tenant Isolation Enforcement
+  validateTenantAccess(input.schoolId, session);
+
+  if (!input.id) {
+    return { success: false, error: 'Lesson log ID is required.' };
+  }
+
+  // 3. Fetch existing log to verify ownership
+  const { data: existingLog, error: fetchError } = await supabase
+    .from('lesson_logs')
+    .select('teacher_id, school_id')
+    .eq('id', input.id)
+    .eq('school_id', input.schoolId)
+    .single();
+
+  if (fetchError || !existingLog) {
+    return { success: false, error: 'Lesson log not found.' };
+  }
+
+  // 4. Permission check - only the logging teacher or admin can update
+  const canEdit = session.role === 'SUPER_ADMIN' ||
+                  session.role === 'SCHOOL_ADMIN' ||
+                  session.role === 'PRINCIPAL' ||
+                  existingLog.teacher_id === session.userId;
+
+  if (!canEdit) {
+    return { success: false, error: 'You can only edit your own lesson logs.' };
+  }
+
+  // 5. Build update object with only provided fields
+  const updateData: Record<string, string | string[] | null | undefined> = {};
+
+  if (input.divisionId !== undefined) updateData.division_id = input.divisionId;
+  if (input.subjectId !== undefined) updateData.subject_id = input.subjectId;
+  if (input.academicYearId !== undefined) updateData.academic_year_id = input.academicYearId;
+  if (input.date !== undefined) updateData.date = input.date;
+  if (input.topicsCovered !== undefined) updateData.topics_covered = input.topicsCovered;
+  if (input.homeworkAssigned !== undefined) updateData.homework_assigned = input.homeworkAssigned.trim();
+  if (input.notes !== undefined) updateData.notes = input.notes?.trim() || null;
+
+  if (Object.keys(updateData).length === 0) {
+    return { success: false, error: 'No fields to update.' };
+  }
+
+  // 6. Perform update
+  const { data, error } = await supabase
+    .from('lesson_logs')
+    .update(updateData)
+    .eq('id', input.id)
+    .eq('school_id', input.schoolId)
+    .select()
+    .single();
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  return { success: true, data: data as LessonLog };
+}
+
+/**
+ * Delete a lesson log
+ * Only the logging teacher or admin/primary roles can delete
+ */
+export async function deleteLessonLog(logId: string, schoolId: string) {
+  // 1. RBAC Guard
+  const session = await verifyServerSession(['TEACHER', 'SCHOOL_ADMIN', 'PRINCIPAL', 'SUPER_ADMIN']);
+
+  // 2. Tenant Isolation Enforcement
+  validateTenantAccess(schoolId, session);
+
+  if (!logId) {
+    return { success: false, error: 'Lesson log ID is required.' };
+  }
+
+  // 3. Fetch existing log to verify ownership
+  const { data: existingLog, error: fetchError } = await supabase
+    .from('lesson_logs')
+    .select('teacher_id, school_id')
+    .eq('id', logId)
+    .eq('school_id', schoolId)
+    .single();
+
+  if (fetchError || !existingLog) {
+    return { success: false, error: 'Lesson log not found.' };
+  }
+
+  // 4. Permission check - only the logging teacher or admin can delete
+  const canDelete = session.role === 'SUPER_ADMIN' ||
+                    session.role === 'SCHOOL_ADMIN' ||
+                    session.role === 'PRINCIPAL' ||
+                    existingLog.teacher_id === session.userId;
+
+  if (!canDelete) {
+    return { success: false, error: 'You can only delete your own lesson logs.' };
+  }
+
+  // 5. Perform delete
+  const { error } = await supabase
+    .from('lesson_logs')
+    .delete()
+    .eq('id', logId)
+    .eq('school_id', schoolId);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  return { success: true };
+}
+
